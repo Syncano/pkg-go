@@ -2,7 +2,6 @@ package util
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"io"
 	"net"
@@ -10,6 +9,7 @@ import (
 	"time"
 	"unicode/utf8"
 
+	json "github.com/json-iterator/go"
 	. "github.com/smartystreets/goconvey/convey"
 	"github.com/stretchr/testify/mock"
 	"google.golang.org/grpc/peer"
@@ -29,7 +29,7 @@ func TestGenerateKey(t *testing.T) {
 		val2 := GenerateKey()
 		So(val1, ShouldNotEqual, val2)
 		So(len(val1), ShouldEqual, len(val2))
-		So(len(val1), ShouldEqual, 32)
+		So(len(val1), ShouldEqual, 40)
 	})
 }
 
