@@ -7,7 +7,7 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 	"github.com/stretchr/testify/mock"
 
-	"github.com/Syncano/orion/pkg/celery/mocks"
+	"github.com/Syncano/pkg-go/celery/mocks"
 )
 
 var err = errors.New("some error")
