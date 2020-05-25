@@ -1,0 +1,23 @@
+version: 2.1
+jobs:
+  test:
+    docker:
+      - image: golang:1.14
+    steps:
+      - checkout
+
+      - run:
+          name: Lint
+          command: |
+            make lint
+
+      - run:
+          name: Test
+          command: |
+            make test
+
+workflows:
+  test:
+    jobs:
+      - test
+
