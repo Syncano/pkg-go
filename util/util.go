@@ -7,7 +7,9 @@ import (
 	"io"
 	"math/rand"
 	"net"
+	"regexp"
 	"strconv"
+	"strings"
 	"time"
 	"unicode/utf8"
 
@@ -17,25 +19,63 @@ import (
 )
 
 const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+const hexBytes = "abcdef0123456789"
 
-// GenerateRandomString creates random string with a-zA-Z0-9 of specified length.
-func GenerateRandomString(n int) string {
+// IsTrue returns true if string is a true value.
+func IsTrue(s string) bool {
+	s = strings.ToLower(s)
+	return s == "1" || s == "true" || s == "t" || s == "yes"
+}
+
+func generateRandomString(n int, base string) string {
 	b := make([]byte, n)
+	l := len(base)
+
 	for i := range b {
-		b[i] = letterBytes[rand.Intn(len(letterBytes))]
+		b[i] = base[rand.Intn(l)]
 	}
 
 	return string(b)
 }
 
-// GenerateKey creates random string with length=32.
-func GenerateKey() string {
-	return GenerateRandomString(32)
+// GenerateRandomString creates random string with a-zA-Z0-9 of specified length.
+func GenerateRandomString(n int) string {
+	return generateRandomString(n, letterBytes)
 }
 
-// GenerateShortKey creates random string with length=6.
-func GenerateShortKey() string {
-	return GenerateRandomString(6)
+// GenerateRandomHexString creates random string with a-f0-9 of specified length.
+func GenerateRandomHexString(n int) string {
+	return generateRandomString(n, hexBytes)
+}
+
+// GenerateKey creates random string with length=40.
+func GenerateKey() string {
+	return GenerateRandomString(40)
+}
+
+// GenerateHexKey creates random hex string with length=40.
+func GenerateHexKey() string {
+	return GenerateRandomHexString(40)
+}
+
+// GenerateHexKeyWithParity creates random hex string with defined parity and length=40.
+func GenerateHexKeyWithParity(parity bool) string {
+	b := []rune(GenerateHexKey())
+	if parity {
+		b[len(b)-1] = b[len(b)-1] & 14
+	} else {
+		b[len(b)-1] = b[len(b)-1] | 1
+	}
+
+	return string(b)
+}
+
+// CheckStringParity checks if passed string key is odd or even (considering last bit).
+func CheckStringParity(s string) bool {
+	b := []rune(s)
+	i, _ := strconv.ParseInt(string(b[len(b)-1]), 8, 32) // nolint: errcheck
+
+	return i&1 != 1
 }
 
 // Retry retries f() and sleeps between retries.
@@ -183,7 +223,6 @@ func ToQuoteJSON(s []byte) []byte { // nolint: gocyclo
 
 		if r == '"' || r == '\\' {
 			buf = append(buf, '\\', byte(r))
-
 			continue
 		}
 
@@ -220,8 +259,9 @@ func ToQuoteJSON(s []byte) []byte { // nolint: gocyclo
 					buf = append(buf, lowerhex[r>>uint(s)&0xF])
 				}
 
-				buf = append(buf, `\u`...)
 				r = (r & 0x3ff) + 0xdc00
+
+				buf = append(buf, `\u`...)
 
 				for s := 12; s >= 0; s -= 4 {
 					buf = append(buf, lowerhex[r>>uint(s)&0xF])
@@ -233,4 +273,36 @@ func ToQuoteJSON(s []byte) []byte { // nolint: gocyclo
 	buf = append(buf, '"')
 
 	return buf
+}
+
+// NonEmptyString returns first non empty string.
+func NonEmptyString(a, b string) string {
+	if a == "" {
+		return b
+	}
+
+	return a
+}
+
+// Truncate returns string truncated to length i.
+func Truncate(a string, i int) string {
+	if len(a) > i {
+		return a[:i]
+	}
+
+	return a
+}
+
+// RegexNamedGroups returns regex groups for specified regex and matches list.
+func RegexNamedGroups(regex *regexp.Regexp, matches []string) map[string]string {
+	m, n := matches[1:], regex.SubexpNames()[1:]
+	r := make(map[string]string, len(m))
+
+	for i := range n {
+		if n[i] != "" {
+			r[n[i]] = m[i]
+		}
+	}
+
+	return r
 }
