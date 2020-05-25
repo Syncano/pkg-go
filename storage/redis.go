@@ -37,3 +37,7 @@ func (r *Redis) DB() *redisdb.DB {
 func (r *Redis) PubSub() *PubSub {
 	return r.pubsub
 }
+
+func (r *Redis) Shutdown() error {
+	return r.cli.Close()
+}

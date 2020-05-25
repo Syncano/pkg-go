@@ -124,3 +124,15 @@ func (d *Database) DB() *pg.DB {
 func (d *Database) TenantDB(schema string) *pg.DB {
 	return d.tenantDB.WithParam("schema", pg.Ident(schema)).WithContext(context.WithValue(context.Background(), KeySchema, schema))
 }
+
+func (d *Database) Shutdown() error {
+	if err := d.commonDB.Close(); err != nil {
+		return err
+	}
+
+	if d.tenantDB != d.commonDB {
+		return d.tenantDB.Close()
+	}
+
+	return nil
+}
