@@ -90,15 +90,21 @@ func (c *LRUCache) Set(key string, val interface{}) {
 }
 
 func (c *LRUCache) SetTTL(key string, val interface{}, ttl time.Duration) {
+	var evicted *keyValue
+
 	c.mu.Lock()
 
 	curVal, ok := c.valueMap[key]
 	if ok {
-		c.delete(curVal.(*Item).valuesListElement)
+		evicted = c.delete(curVal.(*Item).valuesListElement)
 	}
 
 	c.set(key, val, ttl)
 	c.mu.Unlock()
+
+	if evicted != nil {
+		c.handleEviction(evicted)
+	}
 }
 
 // Add assigns a new value to an item at given key if it doesn't exist.
@@ -129,12 +135,21 @@ func (c *LRUCache) AddTTL(key string, val interface{}, ttl time.Duration) bool {
 // Delete removes an item at given key.
 func (c *LRUCache) Delete(key string) bool {
 	c.mu.Lock()
-	defer c.mu.Unlock()
 
 	curVal, ok := c.valueMap[key]
 	if ok {
-		return c.delete(curVal.(*Item).valuesListElement)
+		evicted := c.delete(curVal.(*Item).valuesListElement)
+
+		c.mu.Unlock()
+
+		if evicted != nil {
+			c.handleEviction(evicted)
+
+			return true
+		}
 	}
+
+	c.mu.Unlock()
 
 	return false
 }

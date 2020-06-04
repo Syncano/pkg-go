@@ -111,13 +111,22 @@ func (c *LRUSetCache) AddTTL(key string, val interface{}, ttl time.Duration) boo
 
 // Delete removes an item at given key.
 func (c *LRUSetCache) Delete(key string, val interface{}) bool {
+	var evicted *keyValue
+
 	c.mu.Lock()
-	defer c.mu.Unlock()
 
 	if curVal, ok := c.valueMap[key]; ok {
 		if v, ok := curVal.(map[interface{}]*Item)[val]; ok {
-			return c.delete(v.valuesListElement)
+			evicted = c.delete(v.valuesListElement)
 		}
+	}
+
+	c.mu.Unlock()
+
+	if evicted != nil {
+		c.handleEviction(evicted)
+
+		return true
 	}
 
 	return false

@@ -134,15 +134,24 @@ func (c *Cache) OnValueEvicted(f EvictionHandler) {
 // Calls onValueEvicted.
 func (c *Cache) DeleteLRU() bool {
 	c.mu.Lock()
-	defer c.mu.Unlock()
 
-	return c.deleteLRU()
+	evicted := c.deleteLRU()
+
+	c.mu.Unlock()
+
+	if evicted != nil {
+		c.handleEviction(evicted)
+
+		return true
+	}
+
+	return false
 }
 
-func (c *Cache) deleteLRU() bool {
+func (c *Cache) deleteLRU() *keyValue {
 	e := c.valuesList.Front()
 	if e == nil {
-		return false
+		return nil
 	}
 
 	return c.delete(e)
@@ -179,14 +188,9 @@ func (c *Cache) DeleteByTime(now int64) {
 		evictedValues = append(evictedValues, valueEvicted)
 	}
 
-	c.muHandler.RLock()
-	if c.onValueEvicted != nil {
-		for _, v := range evictedValues {
-			c.onValueEvicted(v.key, v.value)
-		}
-	}
-	c.muHandler.RUnlock()
 	c.mu.Unlock()
+
+	c.handleEviction(evictedValues...)
 }
 
 func (c *Cache) defaultDeleteHandler(item *valuesItem) *keyValue {
@@ -194,18 +198,20 @@ func (c *Cache) defaultDeleteHandler(item *valuesItem) *keyValue {
 	return &keyValue{key: item.key, value: item.item.object}
 }
 
-func (c *Cache) delete(e *list.Element) bool {
-	if v := c.deleteValue(e, 0); v != nil {
-		c.muHandler.RLock()
-		if c.onValueEvicted != nil {
+func (c *Cache) delete(e *list.Element) *keyValue {
+	return c.deleteValue(e, 0)
+}
+
+func (c *Cache) handleEviction(evictedValues ...*keyValue) {
+	c.muHandler.RLock()
+
+	if c.onValueEvicted != nil {
+		for _, v := range evictedValues {
 			c.onValueEvicted(v.key, v.value)
 		}
-		c.muHandler.RUnlock()
-
-		return true
 	}
 
-	return false
+	c.muHandler.RUnlock()
 }
 
 // deleteValue deletes exactly one element from valuesList. If now != 0, it is checked against expiration time.

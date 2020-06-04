@@ -67,6 +67,7 @@ func TestLRUCache(t *testing.T) {
 				Convey("Set on same key overwrites", func() {
 					mh.On("OnValueEvicted", "key1", "value1").Once()
 					c.Set("key1", "value3")
+
 					So(c.Len(), ShouldEqual, 2)
 					So(c.Get("key1"), ShouldEqual, "value3")
 				})
