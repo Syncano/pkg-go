@@ -128,9 +128,12 @@ func checkError(err, target error, code codes.Code) bool {
 		return true
 	}
 
-	s, ok := status.FromError(err)
+	var grpcstatus interface{ GRPCStatus() *status.Status }
+	if errors.As(err, &grpcstatus) {
+		return grpcstatus.GRPCStatus().Code() == code
+	}
 
-	return ok && s.Code() == code
+	return false
 }
 
 func IsContextError(err error) bool {
