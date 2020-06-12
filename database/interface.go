@@ -2,6 +2,8 @@ package database
 
 import (
 	"net/http"
+
+	"github.com/go-pg/pg/v9"
 )
 
 //go:generate go run github.com/vektra/mockery/cmd/mockery -name DBContext
@@ -15,3 +17,11 @@ type DBContext interface {
 	// Request returns `*http.Request`.
 	Request() *http.Request
 }
+
+//go:generate go run github.com/vektra/mockery/cmd/mockery -name Databaser
+type Databaser interface {
+	DB() *pg.DB
+	TenantDB(schema string) *pg.DB
+}
+
+var _ Databaser = (*DB)(nil)

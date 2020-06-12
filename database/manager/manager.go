@@ -9,30 +9,30 @@ import (
 
 // Manager defines object manager.
 type Manager struct {
-	*Factory
+	db    *database.DB
 	dbCtx database.DBContext
 	curDB orm.DB
 	dbGet func(database.DBContext) orm.DB
 }
 
 // NewManager creates and returns new manager.
-func (q *Factory) NewManager(c database.DBContext) *Manager {
+func NewManager(db *database.DB, c database.DBContext) *Manager {
 	return &Manager{
-		Factory: q,
-		dbCtx:   c,
+		db:    db,
+		dbCtx: c,
 		dbGet: func(c database.DBContext) orm.DB {
-			return DB(q.db, c)
+			return database.GetDB(db, c)
 		},
 	}
 }
 
 // NewTenantManager creates and returns new tenant manager.
-func (q *Factory) NewTenantManager(c database.DBContext) *Manager {
+func NewTenantManager(db *database.DB, c database.DBContext) *Manager {
 	return &Manager{
-		Factory: q,
-		dbCtx:   c,
+		db:    db,
+		dbCtx: c,
 		dbGet: func(c database.DBContext) orm.DB {
-			return TenantDB(q.db, c)
+			return database.GetTenantDB(db, c)
 		},
 	}
 }

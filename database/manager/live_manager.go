@@ -12,13 +12,13 @@ type LiveManager struct {
 }
 
 // NewLiveManager creates and returns new live manager.
-func (q *Factory) NewLiveManager(c database.DBContext) *LiveManager {
-	return &LiveManager{Manager: q.NewManager(c)}
+func NewLiveManager(db *database.DB, c database.DBContext) *LiveManager {
+	return &LiveManager{Manager: NewManager(db, c)}
 }
 
 // NewLiveTenantManager creates and returns new live tenant manager.
-func (q *Factory) NewLiveTenantManager(c database.DBContext) *LiveManager {
-	return &LiveManager{Manager: q.NewTenantManager(c)}
+func NewLiveTenantManager(db *database.DB, c database.DBContext) *LiveManager {
+	return &LiveManager{Manager: NewTenantManager(db, c)}
 }
 
 // Query returns only alive objects.
