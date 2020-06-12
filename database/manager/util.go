@@ -1,4 +1,4 @@
-package querymgr
+package manager
 
 import (
 	"context"
