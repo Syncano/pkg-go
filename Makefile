@@ -1,5 +1,4 @@
 CURRENTPACKAGE := github.com/Syncano/pkg-go
-EXECNAME := orion
 
 PATH := $(PATH):$(GOPATH)/bin
 GOFILES=$(shell find . -mindepth 2 -type f -name '*.go' ! -path "./.*" ! -path "./dev/*" ! -path "*/proto/*")

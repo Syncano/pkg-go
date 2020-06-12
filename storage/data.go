@@ -4,6 +4,7 @@ import (
 	"context"
 	"io"
 
+	"github.com/Syncano/pkg-go/database"
 	"github.com/Syncano/pkg-go/util"
 
 	"github.com/go-pg/pg/v9/orm"
@@ -23,7 +24,7 @@ type bucketInfo struct {
 	URL  string
 }
 
-func SafeUpload(ctx context.Context, storage DataStorage, d *Database, db orm.DB, bucket BucketKey, key string, f io.Reader) error {
+func SafeUpload(ctx context.Context, storage DataStorage, d *database.DB, db orm.DB, bucket BucketKey, key string, f io.Reader) error {
 	d.AddDBRollbackHook(db, func() error {
 		return storage.Delete(ctx, bucket, key)
 	})

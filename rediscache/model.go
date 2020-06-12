@@ -7,7 +7,7 @@ import (
 
 	"github.com/go-pg/pg/v9/orm"
 
-	"github.com/Syncano/pkg-go/storage"
+	"github.com/Syncano/pkg-go/database"
 	"github.com/Syncano/pkg-go/util"
 )
 
@@ -20,7 +20,7 @@ func (c *Cache) createModelVersionCacheKey(schema, model string, pk interface{})
 }
 
 func getSchemaKey(db orm.DB) string {
-	schema, ok := db.Context().Value(storage.KeySchema).(string)
+	schema, ok := db.Context().Value(database.KeySchema).(string)
 	if !ok {
 		schema = "0"
 	} else {

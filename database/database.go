@@ -1,4 +1,4 @@
-package storage
+package database
 
 import (
 	"context"
@@ -22,7 +22,7 @@ const (
 	dbConnRetrySleep     = 250 * time.Millisecond
 )
 
-type Database struct {
+type DB struct {
 	commonDB *pg.DB
 	tenantDB *pg.DB
 
@@ -61,8 +61,8 @@ func DefaultDBOptions() *pg.Options {
 	}
 }
 
-// InitDB sets up a database.
-func NewDatabase(opts, instancesOpts *pg.Options, logger *log.Logger, debug bool) *Database {
+// NewDB creates a database.
+func NewDB(opts, instancesOpts *pg.Options, logger *log.Logger, debug bool) *DB {
 	commonDB := initDB(opts, logger, debug)
 	tenantDB := commonDB
 
@@ -70,7 +70,7 @@ func NewDatabase(opts, instancesOpts *pg.Options, logger *log.Logger, debug bool
 		tenantDB = initDB(instancesOpts, logger, debug)
 	}
 
-	return &Database{
+	return &DB{
 		commonDB: commonDB,
 		tenantDB: tenantDB,
 
@@ -116,16 +116,16 @@ func initDB(opts *pg.Options, logger *log.Logger, debug bool) *pg.DB {
 }
 
 // DB returns database client.
-func (d *Database) DB() *pg.DB {
+func (d *DB) DB() *pg.DB {
 	return d.commonDB
 }
 
 // TenantDB returns database client.
-func (d *Database) TenantDB(schema string) *pg.DB {
+func (d *DB) TenantDB(schema string) *pg.DB {
 	return d.tenantDB.WithParam("schema", pg.Ident(schema)).WithContext(context.WithValue(context.Background(), KeySchema, schema))
 }
 
-func (d *Database) Shutdown() error {
+func (d *DB) Shutdown() error {
 	if err := d.commonDB.Close(); err != nil {
 		return err
 	}

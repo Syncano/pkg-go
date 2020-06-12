@@ -9,7 +9,7 @@ import (
 	"github.com/imdario/mergo"
 	"github.com/vmihailenco/msgpack/v4"
 
-	"github.com/Syncano/pkg-go/storage"
+	"github.com/Syncano/pkg-go/database"
 	"github.com/Syncano/pkg-go/util"
 )
 
@@ -19,7 +19,7 @@ const (
 
 type Cache struct {
 	codec, codecLocal *cache.Codec
-	db                *storage.Database
+	db                *database.DB
 	opts              *Options
 }
 
@@ -36,7 +36,7 @@ var DefaultOptions = &Options{
 }
 
 // Init sets up a cache.
-func New(r rediser, db *storage.Database, opts *Options) *Cache {
+func New(r rediser, db *database.DB, opts *Options) *Cache {
 	if opts != nil {
 		mergo.Merge(opts, DefaultOptions) // nolint - error not possible
 	} else {

@@ -1,4 +1,4 @@
-package storage
+package database
 
 import (
 	"fmt"
@@ -9,7 +9,7 @@ import (
 
 type hookFunc func() error
 
-func (d *Database) AddDBCommitHook(db orm.DB, f hookFunc) {
+func (d *DB) AddDBCommitHook(db orm.DB, f hookFunc) {
 	tx, istx := db.(*pg.Tx)
 	if !istx {
 		_ = f()
@@ -21,7 +21,7 @@ func (d *Database) AddDBCommitHook(db orm.DB, f hookFunc) {
 	d.dbhookmu.Unlock()
 }
 
-func (d *Database) AddDBRollbackHook(db orm.DB, f hookFunc) {
+func (d *DB) AddDBRollbackHook(db orm.DB, f hookFunc) {
 	tx, istx := db.(*pg.Tx)
 	if !istx {
 		return
@@ -32,7 +32,7 @@ func (d *Database) AddDBRollbackHook(db orm.DB, f hookFunc) {
 	d.dbhookmu.Unlock()
 }
 
-func (d *Database) processDBHooks(tx *pg.Tx, process, hooks map[*pg.Tx][]hookFunc) error {
+func (d *DB) processDBHooks(tx *pg.Tx, process, hooks map[*pg.Tx][]hookFunc) error {
 	d.dbhookmu.RLock()
 	funcs := process[tx]
 	_, hooksOK := hooks[tx]
@@ -56,18 +56,18 @@ func (d *Database) processDBHooks(tx *pg.Tx, process, hooks map[*pg.Tx][]hookFun
 
 // ProcessDBCommitHooks processes all commit hooks for transaction and removes rollback hooks if any.
 // Needs to be called after every transaction.
-func (d *Database) ProcessDBCommitHooks(tx *pg.Tx) error {
+func (d *DB) ProcessDBCommitHooks(tx *pg.Tx) error {
 	return d.processDBHooks(tx, d.commitHooks, d.rollbackHooks)
 }
 
 // ProcessDBRollbackHooks processes all rollback hooks for transaction and removes commit hooks if any.
 // Needs to be called after every transaction.
-func (d *Database) ProcessDBRollbackHooks(tx *pg.Tx) error {
+func (d *DB) ProcessDBRollbackHooks(tx *pg.Tx) error {
 	return d.processDBHooks(tx, d.rollbackHooks, d.commitHooks)
 }
 
 // RunTransactionWithHooks is a helper method that calls commit and rollback hooks.
-func (d *Database) RunTransactionWithHooks(tx *pg.Tx, fn func(*pg.Tx) error) error {
+func (d *DB) RunTransactionWithHooks(tx *pg.Tx, fn func(*pg.Tx) error) error {
 	defer func() {
 		if err := recover(); err != nil {
 			_ = tx.Rollback()

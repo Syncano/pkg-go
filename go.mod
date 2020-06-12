@@ -17,6 +17,7 @@ require (
 	github.com/hashicorp/yamux v0.0.0-20190923154419-df201c70410d
 	github.com/hnakamur/zap-ltsv v0.0.0-20170731143423-10a3dd1d839c
 	github.com/imdario/mergo v0.3.9
+	github.com/jackc/pgtype v1.3.0
 	github.com/json-iterator/go v1.1.9
 	github.com/juju/ratelimit v1.0.1
 	github.com/lithammer/shortuuid v3.0.0+incompatible

@@ -1,4 +1,4 @@
-package storage
+package database
 
 import (
 	"fmt"
@@ -22,7 +22,7 @@ var (
 	anyModelKey = fmt.Sprintf("%T", AnyModel)
 )
 
-func (d *Database) AddModelDeleteHook(model interface{}, f DeleteModelHookFunc) {
+func (d *DB) AddModelDeleteHook(model interface{}, f DeleteModelHookFunc) {
 	d.modelhookmu.Lock()
 
 	key := fmt.Sprintf("%T", model)
@@ -31,7 +31,7 @@ func (d *Database) AddModelDeleteHook(model interface{}, f DeleteModelHookFunc) 
 	d.modelhookmu.Unlock()
 }
 
-func (d *Database) AddModelSoftDeleteHook(model interface{}, f SoftDeleteModelHookFunc) {
+func (d *DB) AddModelSoftDeleteHook(model interface{}, f SoftDeleteModelHookFunc) {
 	d.modelhookmu.Lock()
 
 	key := fmt.Sprintf("%T", model)
@@ -40,7 +40,7 @@ func (d *Database) AddModelSoftDeleteHook(model interface{}, f SoftDeleteModelHo
 	d.modelhookmu.Unlock()
 }
 
-func (d *Database) AddModelSaveHook(model interface{}, f SaveModelHookFunc) {
+func (d *DB) AddModelSaveHook(model interface{}, f SaveModelHookFunc) {
 	d.modelhookmu.Lock()
 
 	key := fmt.Sprintf("%T", model)
@@ -49,7 +49,7 @@ func (d *Database) AddModelSaveHook(model interface{}, f SaveModelHookFunc) {
 	d.modelhookmu.Unlock()
 }
 
-func (d *Database) ProcessModelSaveHook(c DBContext, db orm.DB, created bool, model interface{}) error {
+func (d *DB) ProcessModelSaveHook(c DBContext, db orm.DB, created bool, model interface{}) error {
 	d.modelhookmu.RLock()
 
 	key := fmt.Sprintf("%T", model)
@@ -68,7 +68,7 @@ func (d *Database) ProcessModelSaveHook(c DBContext, db orm.DB, created bool, mo
 	return nil
 }
 
-func (d *Database) ProcessModelDeleteHook(c DBContext, db orm.DB, model interface{}) error {
+func (d *DB) ProcessModelDeleteHook(c DBContext, db orm.DB, model interface{}) error {
 	d.modelhookmu.RLock()
 
 	key := fmt.Sprintf("%T", model)
@@ -87,7 +87,7 @@ func (d *Database) ProcessModelDeleteHook(c DBContext, db orm.DB, model interfac
 	return nil
 }
 
-func (d *Database) ProcessModelSoftDeleteHook(c DBContext, db orm.DB, model interface{}) error {
+func (d *DB) ProcessModelSoftDeleteHook(c DBContext, db orm.DB, model interface{}) error {
 	d.modelhookmu.RLock()
 
 	key := fmt.Sprintf("%T", model)
