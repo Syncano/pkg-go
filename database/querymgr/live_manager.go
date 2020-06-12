@@ -1,4 +1,4 @@
-package query
+package querymgr
 
 import (
 	"github.com/go-pg/pg/v9/orm"

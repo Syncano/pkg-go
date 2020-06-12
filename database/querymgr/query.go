@@ -1,4 +1,4 @@
-package query
+package querymgr
 
 import (
 	"github.com/Syncano/pkg-go/database"

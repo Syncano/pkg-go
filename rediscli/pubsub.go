@@ -1,4 +1,4 @@
-package redis
+package rediscli
 
 import (
 	"sync"
