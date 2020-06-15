@@ -12,11 +12,11 @@ import (
 )
 
 func (c *Cache) createModelCacheKey(schema, model, lookup string) string {
-	return fmt.Sprintf("%s:cache:m:%d:%s:%x", schema, c.opts.CacheVersion, model, util.Hash(lookup))
+	return fmt.Sprintf("%s:%s:m:%d:%s:%x", schema, c.opts.ServiceKey, c.opts.CacheVersion, model, util.Hash(lookup))
 }
 
 func (c *Cache) createModelVersionCacheKey(schema, model string, pk interface{}) string {
-	return fmt.Sprintf("%s:cache:m:%d:%s:%v:version", schema, c.opts.CacheVersion, model, pk)
+	return fmt.Sprintf("%s:%s:m:%d:%s:%v:version", schema, c.opts.ServiceKey, c.opts.CacheVersion, model, pk)
 }
 
 func getSchemaKey(db orm.DB) string {

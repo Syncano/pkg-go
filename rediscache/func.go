@@ -9,11 +9,11 @@ import (
 )
 
 func (c *Cache) createFuncCacheKey(funcKey, versionKey, lookup string) string {
-	return fmt.Sprintf("0:cache:f:%d:%s:%s:%x", c.opts.CacheVersion, funcKey, versionKey, util.Hash(lookup))
+	return fmt.Sprintf("0:%s:f:%d:%s:%s:%x", c.opts.ServiceKey, c.opts.CacheVersion, funcKey, versionKey, util.Hash(lookup))
 }
 
 func (c *Cache) createFuncVersionCacheKey(funcKey, versionKey string) string {
-	return fmt.Sprintf("0:cache:f:%d:%s:%s:version", c.opts.CacheVersion, funcKey, versionKey)
+	return fmt.Sprintf("0:%s:f:%d:%s:%s:version", c.opts.ServiceKey, c.opts.CacheVersion, funcKey, versionKey)
 }
 
 func (c *Cache) FuncCacheInvalidate(funcKey, versionKey string) error {

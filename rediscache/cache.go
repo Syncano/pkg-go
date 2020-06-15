@@ -27,12 +27,14 @@ type Options struct {
 	LocalCacheTimeout time.Duration
 	CacheTimeout      time.Duration
 	CacheVersion      int
+	ServiceKey        string
 }
 
 var DefaultOptions = &Options{
 	CacheVersion:      1,
 	CacheTimeout:      12 * time.Hour,
 	LocalCacheTimeout: 1 * time.Hour,
+	ServiceKey:        "cache",
 }
 
 // Init sets up a cache.
