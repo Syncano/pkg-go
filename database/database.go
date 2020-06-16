@@ -66,7 +66,7 @@ func NewDB(opts, instancesOpts *pg.Options, logger *log.Logger, debug bool) *DB 
 	commonDB := initDB(opts, logger, debug)
 	tenantDB := commonDB
 
-	if instancesOpts != nil && instancesOpts.Addr != opts.Addr || instancesOpts.Database != opts.Database {
+	if instancesOpts != nil && (instancesOpts.Addr != opts.Addr || instancesOpts.Database != opts.Database) {
 		tenantDB = initDB(instancesOpts, logger, debug)
 	}
 
