@@ -13,9 +13,7 @@ import (
 	"github.com/Syncano/pkg-go/util"
 )
 
-const (
-	ContextRequestID = "req_id"
-)
+const ContextRequestID = "req_id"
 
 func logg(c echo.Context, start time.Time, path string, l *zap.Logger, err error) {
 	res := c.Response()
