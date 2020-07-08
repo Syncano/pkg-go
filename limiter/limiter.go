@@ -83,9 +83,9 @@ func (l *Limiter) createLock(key string, limit int) (lock *lockData) {
 }
 
 // Lock tries to get a lock on a semaphore on key with limit.
-func (l *Limiter) Lock(ctx context.Context, key string, limit int) error {
+func (l *Limiter) Lock(ctx context.Context, key string, limit int) (*LockInfo, error) {
 	if limit <= 0 {
-		return ErrMaxQueueSizeReached
+		return nil, ErrMaxQueueSizeReached
 	}
 
 	var lock *lockData
@@ -102,14 +102,29 @@ func (l *Limiter) Lock(ctx context.Context, key string, limit int) error {
 	defer atomic.AddInt32(&lock.queue, -1)
 
 	if int(atomic.AddInt32(&lock.queue, 1)) > l.options.Queue {
-		return ErrMaxQueueSizeReached
+		return nil, ErrMaxQueueSizeReached
 	}
 
 	select {
 	case lock.ch <- struct{}{}:
-		return nil
+		return &LockInfo{Capacity: limit, Taken: len(lock.ch)}, nil
 	case <-ctx.Done():
-		return ctx.Err()
+		return nil, ctx.Err()
+	}
+}
+
+func (l *Limiter) Info(key string) *LockInfo {
+	v := l.channels.Get(key)
+	if v == nil {
+		return nil
+	}
+
+	lock := v.(*lockData)
+
+	return &LockInfo{
+		Capacity: cap(lock.ch),
+		Taken:    len(lock.ch),
+		Queued:   int(atomic.LoadInt32(&lock.queue)),
 	}
 }
 

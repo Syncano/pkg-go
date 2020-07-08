@@ -13,23 +13,30 @@ func TestLimiter(t *testing.T) {
 		l := New(&Options{Queue: 1})
 
 		Convey("Lock returns error when limit is <= 0", func() {
-			So(l.Lock(context.Background(), "key", 0), ShouldEqual, ErrMaxQueueSizeReached)
+			_, err := l.Lock(context.Background(), "key", 0)
+			So(err, ShouldEqual, ErrMaxQueueSizeReached)
 		})
 		Convey("Lock is a semaphore-like lock", func() {
-			So(l.Lock(context.Background(), "key", 2), ShouldBeNil)
-			So(l.Lock(context.Background(), "key", 2), ShouldBeNil)
+			_, err := l.Lock(context.Background(), "key", 2)
+			So(err, ShouldBeNil)
+			_, err = l.Lock(context.Background(), "key", 2)
+			So(err, ShouldBeNil)
 			l.Unlock("key", 2)
 			l.Unlock("key", 2)
-			So(l.Lock(context.Background(), "key", 2), ShouldBeNil)
+			_, err = l.Lock(context.Background(), "key", 2)
+			So(err, ShouldBeNil)
 		})
 		Convey("Lock respects context", func() {
 			ctx, cancel := context.WithCancel(context.Background())
 			l.Lock(ctx, "key", 1)
 			cancel()
-			So(l.Lock(ctx, "key", 1), ShouldEqual, context.Canceled)
+
+			_, err := l.Lock(ctx, "key", 1)
+			So(err, ShouldEqual, context.Canceled)
 		})
 		Convey("Lock can safely overflow", func() {
-			So(l.Lock(context.Background(), "key", 1), ShouldBeNil)
+			_, err := l.Lock(context.Background(), "key", 1)
+			So(err, ShouldBeNil)
 			ch := make(chan time.Time, 1)
 
 			go func() {
@@ -39,7 +46,8 @@ func TestLimiter(t *testing.T) {
 			time.Sleep(50 * time.Millisecond)
 
 			// Lock has overflown and should return error.
-			So(l.Lock(context.Background(), "key", 1), ShouldEqual, ErrMaxQueueSizeReached)
+			_, err = l.Lock(context.Background(), "key", 1)
+			So(err, ShouldEqual, ErrMaxQueueSizeReached)
 			now := time.Now()
 
 			// Now Lock that is waiting in goroutine should succeed.
@@ -48,7 +56,8 @@ func TestLimiter(t *testing.T) {
 
 			// Try again to lock.
 			l.Unlock("key", 1)
-			So(l.Lock(context.Background(), "key", 1), ShouldBeNil)
+			_, err = l.Lock(context.Background(), "key", 1)
+			So(err, ShouldBeNil)
 		})
 		Convey("Unlock silently quits for non existing keys", func() {
 			l.Unlock("key", 2)
