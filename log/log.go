@@ -21,13 +21,15 @@ type Config struct {
 	LogLevel string
 }
 
-func WithDebug(config *Config) {
-	config.Debug = true
+func WithDebug(debug bool) func(*Config) {
+	return func(config *Config) {
+		config.Debug = debug
+	}
 }
 
 func WithLogLevel(logLevel string) func(*Config) {
 	return func(config *Config) {
-		config.Debug = true
+		config.LogLevel = logLevel
 	}
 }
 
