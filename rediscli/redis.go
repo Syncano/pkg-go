@@ -3,7 +3,7 @@ package rediscli
 import (
 	"github.com/go-redis/redis/v7"
 
-	"github.com/Syncano/pkg-go/redisdb"
+	"github.com/Syncano/pkg-go/v2/redisdb"
 )
 
 type Redis struct {

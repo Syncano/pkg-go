@@ -11,9 +11,9 @@ type LRUSetCache struct {
 
 // NewLRUSetCache creates and initializes a new cache object.
 // This one is based on LRU K->List with TTL
-func NewLRUSetCache(options *Options) *LRUSetCache {
+func NewLRUSetCache(opts ...func(*Config)) *LRUSetCache {
 	cache := LRUSetCache{}
-	cache.Cache.Init(options, cache.deleteHandler)
+	cache.Cache.Init(cache.deleteHandler, opts...)
 
 	return &cache
 }
@@ -77,7 +77,7 @@ func (c *LRUSetCache) Add(key string, val interface{}) bool {
 
 func (c *LRUSetCache) AddTTL(key string, val interface{}, ttl time.Duration) bool {
 	if ttl == 0 {
-		ttl = c.options.TTL
+		ttl = c.cfg.TTL
 	}
 
 	c.mu.Lock()

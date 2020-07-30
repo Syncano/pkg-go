@@ -4,8 +4,8 @@ import (
 	"context"
 	"io"
 
-	"github.com/Syncano/pkg-go/database"
-	"github.com/Syncano/pkg-go/util"
+	"github.com/Syncano/pkg-go/v2/database"
+	"github.com/Syncano/pkg-go/v2/util"
 
 	"github.com/go-pg/pg/v9/orm"
 )

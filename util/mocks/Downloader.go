@@ -5,7 +5,7 @@ package mocks
 import (
 	context "context"
 
-	util "github.com/Syncano/pkg-go/util"
+	util "github.com/Syncano/pkg-go/v2/util"
 	mock "github.com/stretchr/testify/mock"
 )
 

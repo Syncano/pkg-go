@@ -10,7 +10,7 @@ import (
 
 func TestLimiter(t *testing.T) {
 	Convey("Given limiter", t, func() {
-		l := New(&Options{Queue: 1})
+		l := New(WithQueue(1))
 
 		Convey("Lock returns error when limit is <= 0", func() {
 			_, err := l.Lock(context.Background(), "key", 0)

@@ -9,8 +9,8 @@ import (
 	"github.com/labstack/echo/v4"
 	"go.uber.org/zap"
 
-	"github.com/Syncano/pkg-go/log"
-	"github.com/Syncano/pkg-go/util"
+	"github.com/Syncano/pkg-go/v2/log"
+	"github.com/Syncano/pkg-go/v2/util"
 )
 
 const ContextRequestID = "req_id"

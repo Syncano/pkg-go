@@ -23,7 +23,7 @@ func TestDownloader(t *testing.T) {
 	Convey("Given http server and initialized downloader", t, func() {
 		srv := http.Server{Addr: ":9123", Handler: http.HandlerFunc(handlerFunc)}
 		go srv.ListenAndServe()
-		downloader := NewDownloader(&DownloaderOptions{RetryCount: 0})
+		downloader := NewDownloader(WithRetry(0, 0))
 
 		Convey("downloader processes all files as soon as they are ready", func() {
 			ctx := context.Background()
@@ -50,9 +50,9 @@ func TestDownloader(t *testing.T) {
 			So(res, ShouldBeNil)
 		})
 
-		Convey("Options returns a copy of options struct", func() {
-			So(downloader.Options(), ShouldNotEqual, downloader.options)
-			So(downloader.Options(), ShouldResemble, downloader.options)
+		Convey("Config returns a copy of config struct", func() {
+			So(downloader.Config(), ShouldNotEqual, downloader.cfg)
+			So(downloader.Config(), ShouldResemble, downloader.cfg)
 		})
 
 		Convey("downloader propagates invalid request error", func() {

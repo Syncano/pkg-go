@@ -6,7 +6,7 @@ import (
 	"github.com/go-pg/pg/v9"
 	"github.com/go-pg/pg/v9/orm"
 
-	"github.com/Syncano/pkg-go/util"
+	"github.com/Syncano/pkg-go/v2/util"
 )
 
 // Lock performs query with locking of rows for update.

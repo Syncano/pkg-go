@@ -10,7 +10,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 
-	"github.com/Syncano/pkg-go/util"
+	"github.com/Syncano/pkg-go/v2/util"
 )
 
 type s3Storage struct {

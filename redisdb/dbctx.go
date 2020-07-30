@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/Syncano/pkg-go/util"
+	"github.com/Syncano/pkg-go/v2/util"
 
 	"github.com/go-redis/redis/v7"
 	"github.com/pkg/errors"

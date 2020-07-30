@@ -2,46 +2,29 @@ package cache
 
 import (
 	"time"
-
-	"github.com/imdario/mergo"
 )
 
 // LRUCache describes a struct for caching.
 type LRUCache struct {
 	Cache
-	lruOptions LRUOptions
-}
-
-// LRUOptions holds settable options for cache.
-type LRUOptions struct {
-	AutoRefresh bool
-}
-
-var defaultLRUOptions = &LRUOptions{
-	AutoRefresh: true,
+	autoRefresh bool
 }
 
 // NewLRUCache creates and initializes a new cache object.
 // This one is based on LRU KV with TTL
-func NewLRUCache(options *Options, lruOptions *LRUOptions) *LRUCache {
-	if lruOptions != nil {
-		mergo.Merge(lruOptions, defaultLRUOptions) // nolint - error not possible
-	} else {
-		lruOptions = defaultLRUOptions
-	}
-
+func NewLRUCache(autoRefresh bool, opts ...func(*Config)) *LRUCache {
 	cache := LRUCache{
-		lruOptions: *lruOptions,
+		autoRefresh: autoRefresh,
 	}
 
-	cache.Cache.Init(options, cache.deleteHandler)
+	cache.Cache.Init(cache.deleteHandler, opts...)
 
 	return &cache
 }
 
 // Get returns an item at given key. It automatically extends the expiration if auto refresh is true. Returns the item or nil.
 func (c *LRUCache) Get(key string) interface{} {
-	return c.get(key, c.lruOptions.AutoRefresh)
+	return c.get(key, c.autoRefresh)
 }
 
 func (c *LRUCache) get(key string, refresh bool) interface{} {
@@ -73,7 +56,7 @@ func (c *LRUCache) Refresh(key string) bool {
 
 func (c *LRUCache) set(key string, val interface{}, ttl time.Duration) {
 	if ttl == 0 {
-		ttl = c.options.TTL
+		ttl = c.cfg.TTL
 	}
 
 	cItem := &Item{object: val, expiration: time.Now().Add(ttl).UnixNano(), ttl: ttl}

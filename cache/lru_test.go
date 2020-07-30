@@ -10,7 +10,7 @@ import (
 
 func TestLRUCache(t *testing.T) {
 	Convey("Given new LRU cache with auto refresh", t, func() {
-		c := NewLRUCache(&Options{Capacity: 3, CleanupInterval: 1 * time.Millisecond}, &LRUOptions{})
+		c := NewLRUCache(true, WithCapacity(3), WithCleanupInterval(1*time.Millisecond))
 
 		So(c.janitor, ShouldNotBeNil)
 		So(c.deleteHandler, ShouldEqual, c.defaultDeleteHandler)
@@ -88,7 +88,7 @@ func TestLRUCache(t *testing.T) {
 					So(exp, ShouldBeLessThan, c.valueMap["key1"].(*Item).expiration)
 				})
 				Convey("Get with autorefresh disabled - doesn't refresh expiration time", func() {
-					c.lruOptions.AutoRefresh = false
+					c.autoRefresh = false
 					exp := c.valueMap["key1"].(*Item).expiration
 					So(c.valuesList.Back().Value.(*valuesItem).key, ShouldNotEqual, "key1")
 					c.Get("key1")
@@ -96,7 +96,7 @@ func TestLRUCache(t *testing.T) {
 					So(exp, ShouldEqual, c.valueMap["key1"].(*Item).expiration)
 				})
 				Convey("Refresh refreshes expiration time and moves element to back of LRU", func() {
-					c.lruOptions.AutoRefresh = false
+					c.autoRefresh = false
 					exp := c.valueMap["key1"].(*Item).expiration
 					So(c.valuesList.Back().Value.(*valuesItem).key, ShouldNotEqual, "key1")
 					c.Refresh("key1")

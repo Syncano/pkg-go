@@ -5,20 +5,20 @@ import (
 
 	"github.com/go-pg/pg/v9/orm"
 
-	"github.com/Syncano/pkg-go/util"
+	"github.com/Syncano/pkg-go/v2/util"
 )
 
 func (c *Cache) createFuncCacheKey(funcKey, versionKey, lookup string) string {
-	return fmt.Sprintf("0:%s:f:%d:%s:%s:%x", c.opts.ServiceKey, c.opts.CacheVersion, funcKey, versionKey, util.Hash(lookup))
+	return fmt.Sprintf("0:%s:f:%d:%s:%s:%x", c.cfg.ServiceKey, c.cfg.CacheVersion, funcKey, versionKey, util.Hash(lookup))
 }
 
 func (c *Cache) createFuncVersionCacheKey(funcKey, versionKey string) string {
-	return fmt.Sprintf("0:%s:f:%d:%s:%s:version", c.opts.ServiceKey, c.opts.CacheVersion, funcKey, versionKey)
+	return fmt.Sprintf("0:%s:f:%d:%s:%s:version", c.cfg.ServiceKey, c.cfg.CacheVersion, funcKey, versionKey)
 }
 
 func (c *Cache) FuncCacheInvalidate(funcKey, versionKey string) error {
 	versionKey = c.createFuncVersionCacheKey(funcKey, versionKey)
-	return c.InvalidateVersion(versionKey, c.opts.CacheTimeout)
+	return c.InvalidateVersion(versionKey, c.cfg.CacheTimeout)
 }
 
 func (c *Cache) FuncCacheCommitInvalidate(db orm.DB, funcKey, versionKey string) {
@@ -35,7 +35,7 @@ func (c *Cache) FuncCache(funcKey, versionKey string, val interface{}, lookup st
 		func() string {
 			return c.createFuncVersionCacheKey(funcKey, versionKey)
 		},
-		compute, validate, c.opts.CacheTimeout)
+		compute, validate, c.cfg.CacheTimeout)
 }
 
 func (c *Cache) SimpleFuncCache(funcKey, versionKey string, val interface{}, lookup string,

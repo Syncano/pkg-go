@@ -7,8 +7,6 @@ import (
 	"net/http"
 	"sync"
 	"time"
-
-	"github.com/imdario/mergo"
 )
 
 // Downloader defines file downloader interface.
@@ -19,9 +17,9 @@ type Downloader interface {
 
 // HTTPDownloader is used to download files asynchronously.
 type HTTPDownloader struct {
-	sem     chan bool
-	client  *http.Client
-	options DownloaderOptions
+	sem    chan bool
+	client *http.Client
+	cfg    DownloaderConfig
 }
 
 // DownloadResult is returned after download is finished.
@@ -40,43 +38,62 @@ func (res *DownloadResult) String() string {
 }
 
 // DownloaderOptions holds information about downloader settable options.
-type DownloaderOptions struct {
+type DownloaderConfig struct {
 	Concurrency uint
 	Timeout     time.Duration
 	RetryCount  int
 	RetrySleep  time.Duration
 }
 
-var defaultDownloaderOptions = &DownloaderOptions{
+var DefaultDownloaderConfig = DownloaderConfig{
 	Concurrency: 2,
 	Timeout:     15 * time.Second,
 	RetryCount:  3,
 	RetrySleep:  100 * time.Millisecond,
 }
 
+func WithConcurrency(conc uint) func(*DownloaderConfig) {
+	return func(config *DownloaderConfig) {
+		config.Concurrency = conc
+	}
+}
+
+func WithTimeout(val time.Duration) func(*DownloaderConfig) {
+	return func(config *DownloaderConfig) {
+		config.Timeout = val
+	}
+}
+
+func WithRetry(count int, sleep time.Duration) func(*DownloaderConfig) {
+	return func(config *DownloaderConfig) {
+		config.RetryCount = count
+		config.RetrySleep = sleep
+	}
+}
+
 // NewDownloader initializes a new downloader.
-func NewDownloader(options *DownloaderOptions) *HTTPDownloader {
-	if options != nil {
-		mergo.Merge(options, defaultDownloaderOptions) // nolint - error not possible
-	} else {
-		options = defaultDownloaderOptions
+func NewDownloader(opts ...func(*DownloaderConfig)) *HTTPDownloader {
+	cfg := DefaultDownloaderConfig
+
+	for _, opt := range opts {
+		opt(&cfg)
 	}
 
-	sem := make(chan bool, options.Concurrency)
+	sem := make(chan bool, cfg.Concurrency)
 	client := &http.Client{
-		Timeout: options.Timeout,
+		Timeout: cfg.Timeout,
 	}
 
 	return &HTTPDownloader{
-		options: *options,
-		sem:     sem,
-		client:  client,
+		cfg:    cfg,
+		sem:    sem,
+		client: client,
 	}
 }
 
 // Options returns a copy of downloader options struct.
-func (d *HTTPDownloader) Options() DownloaderOptions {
-	return d.options
+func (d *HTTPDownloader) Config() DownloaderConfig {
+	return d.cfg
 }
 
 func (d *HTTPDownloader) downloadURL(ctx context.Context, url string) ([]byte, error) {
@@ -91,7 +108,7 @@ func (d *HTTPDownloader) downloadURL(ctx context.Context, url string) ([]byte, e
 	// Retry request if needed - stop when context error happens.
 	var data []byte
 
-	_, err = RetryWithCritical(d.options.RetryCount, d.options.RetrySleep, func() (bool, error) {
+	_, err = RetryWithCritical(d.cfg.RetryCount, d.cfg.RetrySleep, func() (bool, error) {
 		var e error
 		resp, e := d.client.Do(req)
 		if e != nil {

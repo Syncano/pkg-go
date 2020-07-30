@@ -3,7 +3,7 @@ package manager
 import (
 	"github.com/go-pg/pg/v9/orm"
 
-	"github.com/Syncano/pkg-go/database"
+	"github.com/Syncano/pkg-go/v2/database"
 )
 
 // LiveManager defines a manager with live functionality.

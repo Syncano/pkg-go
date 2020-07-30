@@ -6,7 +6,7 @@ import (
 
 	sigar "github.com/cloudfoundry/gosigar"
 
-	"github.com/Syncano/pkg-go/util"
+	"github.com/Syncano/pkg-go/v2/util"
 )
 
 // SigarChecker defines a struct that is used to get information about the host system.

@@ -4,8 +4,6 @@ import (
 	"container/list"
 	"sync"
 	"time"
-
-	"github.com/imdario/mergo"
 )
 
 // Cache is an abstract raw struct used for LIFO-like LRU cache with ttl.
@@ -13,7 +11,7 @@ import (
 // All exported methods should be thread-safe and use internal mutex.
 // See LRUCache for example implementation.
 type Cache struct {
-	options Options
+	cfg Config
 
 	// Maintain both valueMap and valuesList in sync.
 	// valueMap is used as a storage for key->list
@@ -29,16 +27,34 @@ type Cache struct {
 	deleteHandler DeleteHandler
 }
 
-// Options holds settable options for cache.
-type Options struct {
+// Config holds settable config for cache.
+type Config struct {
 	TTL             time.Duration
 	CleanupInterval time.Duration
 	Capacity        int
 }
 
-var defaultOptions = &Options{
+var DefaultConfig = Config{
 	TTL:             30 * time.Second,
 	CleanupInterval: 15 * time.Second,
+}
+
+func WithTTL(ttl time.Duration) func(*Config) {
+	return func(config *Config) {
+		config.TTL = ttl
+	}
+}
+
+func WithCleanupInterval(val time.Duration) func(*Config) {
+	return func(config *Config) {
+		config.CleanupInterval = val
+	}
+}
+
+func WithCapacity(c int) func(*Config) {
+	return func(config *Config) {
+		config.Capacity = c
+	}
 }
 
 // Item is used as a single element in cache.
@@ -68,7 +84,7 @@ type DeleteHandler func(*valuesItem) *keyValue
 type EvictionHandler func(string, interface{})
 
 // Init initializes cache struct fields and starts janitor process.
-func (c *Cache) Init(options *Options, deleteHandler DeleteHandler) {
+func (c *Cache) Init(deleteHandler DeleteHandler, opts ...func(*Config)) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -76,13 +92,13 @@ func (c *Cache) Init(options *Options, deleteHandler DeleteHandler) {
 		panic("init on cache cannot be called twice")
 	}
 
-	if options != nil {
-		mergo.Merge(options, defaultOptions) // nolint - error not possible
-	} else {
-		options = defaultOptions
+	cfg := DefaultConfig
+
+	for _, opt := range opts {
+		opt(&cfg)
 	}
 
-	c.options = *options
+	c.cfg = cfg
 
 	if deleteHandler == nil {
 		deleteHandler = c.defaultDeleteHandler
@@ -92,7 +108,7 @@ func (c *Cache) Init(options *Options, deleteHandler DeleteHandler) {
 	c.valueMap = make(map[string]interface{})
 	c.valuesList = list.New()
 	c.janitor = &janitor{
-		interval: options.CleanupInterval,
+		interval: cfg.CleanupInterval,
 		stop:     make(chan struct{}),
 	}
 
@@ -100,8 +116,8 @@ func (c *Cache) Init(options *Options, deleteHandler DeleteHandler) {
 }
 
 // Options returns a copy of options struct.
-func (c *Cache) Options() Options {
-	return c.options
+func (c *Cache) Config() Config {
+	return c.cfg
 }
 
 // StopJanitor is meant to be called when cache is no longer needed to avoid leaking goroutine.
@@ -234,8 +250,8 @@ func (c *Cache) deleteValue(e *list.Element, now int64) (valueEvicted *keyValue)
 
 func (c *Cache) checkLength() {
 	// If we are over the capacity, delete one closest to expiring.
-	if c.options.Capacity > 0 {
-		for c.valuesList.Len() > c.options.Capacity {
+	if c.cfg.Capacity > 0 {
+		for c.valuesList.Len() > c.cfg.Capacity {
 			c.deleteLRU()
 		}
 	}

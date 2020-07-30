@@ -4,7 +4,7 @@ import (
 	"github.com/go-pg/pg/v9"
 	"github.com/go-pg/pg/v9/orm"
 
-	"github.com/Syncano/pkg-go/database"
+	"github.com/Syncano/pkg-go/v2/database"
 )
 
 // Manager defines object manager.

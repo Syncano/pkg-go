@@ -7,16 +7,16 @@ import (
 
 	"github.com/go-pg/pg/v9/orm"
 
-	"github.com/Syncano/pkg-go/database"
-	"github.com/Syncano/pkg-go/util"
+	"github.com/Syncano/pkg-go/v2/database"
+	"github.com/Syncano/pkg-go/v2/util"
 )
 
 func (c *Cache) createModelCacheKey(schema, model, lookup string) string {
-	return fmt.Sprintf("%s:%s:m:%d:%s:%x", schema, c.opts.ServiceKey, c.opts.CacheVersion, model, util.Hash(lookup))
+	return fmt.Sprintf("%s:%s:m:%d:%s:%x", schema, c.cfg.ServiceKey, c.cfg.CacheVersion, model, util.Hash(lookup))
 }
 
 func (c *Cache) createModelVersionCacheKey(schema, model string, pk interface{}) string {
-	return fmt.Sprintf("%s:%s:m:%d:%s:%v:version", schema, c.opts.ServiceKey, c.opts.CacheVersion, model, pk)
+	return fmt.Sprintf("%s:%s:m:%d:%s:%v:version", schema, c.cfg.ServiceKey, c.cfg.CacheVersion, model, pk)
 }
 
 func getSchemaKey(db orm.DB) string {
@@ -37,7 +37,7 @@ func (c *Cache) ModelCacheInvalidate(db orm.DB, m interface{}) {
 		schema := getSchemaKey(db)
 		versionKey := c.createModelVersionCacheKey(schema, tableName, table.PKs[0].Value(reflect.ValueOf(m).Elem()).Interface())
 
-		return c.InvalidateVersion(versionKey, c.opts.CacheTimeout)
+		return c.InvalidateVersion(versionKey, c.cfg.CacheTimeout)
 	})
 }
 
@@ -53,7 +53,7 @@ func (c *Cache) ModelCache(db orm.DB, keyModel, val interface{}, lookup string,
 		func() string {
 			return c.createModelVersionCacheKey(schema, tableName, table.PKs[0].Value(reflect.ValueOf(keyModel).Elem()))
 		},
-		compute, validate, c.opts.CacheTimeout)
+		compute, validate, c.cfg.CacheTimeout)
 }
 
 func (c *Cache) SimpleModelCache(db orm.DB, m interface{}, lookup string, compute func() (interface{}, error)) error {

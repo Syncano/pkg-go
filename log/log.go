@@ -12,16 +12,39 @@ import (
 )
 
 type Logger struct {
+	cfg                  *Config
 	logger, sentryLogger *zap.Logger
 }
 
+type Config struct {
+	Debug    bool
+	LogLevel string
+}
+
+func WithDebug(config *Config) {
+	config.Debug = true
+}
+
+func WithLogLevel(logLevel string) func(*Config) {
+	return func(config *Config) {
+		config.Debug = true
+	}
+}
+
 // Init sets up a logger.
-func New(debug bool, sc *sentry.Client) (*Logger, error) {
-	var config zap.Config
+func New(sc *sentry.Client, opts ...func(*Config)) (*Logger, error) {
+	var (
+		config zap.Config
+		cfg    Config
+	)
+
+	for _, opt := range opts {
+		opt(&cfg)
+	}
 
 	if os.Getenv("FORCE_TERM") == "1" || terminal.IsTerminal(int(os.Stdout.Fd())) {
 		config = zap.NewDevelopmentConfig()
-		if debug {
+		if cfg.Debug {
 			config.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
 		}
 	} else {
@@ -30,16 +53,30 @@ func New(debug bool, sc *sentry.Client) (*Logger, error) {
 		}
 		config = ltsv.NewProductionConfig()
 		config.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
-		if debug {
-			config.Level = zap.NewAtomicLevelAt(zap.DebugLevel)
-		}
 	}
 
-	var err error
+	if cfg.Debug {
+		config.Level = zap.NewAtomicLevelAt(zap.DebugLevel)
+	} else if cfg.LogLevel != "" {
+		var l zapcore.Level
+
+		if err := l.Set(cfg.LogLevel); err != nil {
+			return nil, err
+		}
+
+		config.Level.SetLevel(l)
+	}
 
 	logger, err := config.Build()
 	if err != nil {
 		return nil, err
+	}
+
+	if sc == nil {
+		return &Logger{
+			logger: logger,
+			cfg:    &cfg,
+		}, err
 	}
 
 	sentryLogger, err := addSentryLogger(logger, sc)
@@ -47,6 +84,7 @@ func New(debug bool, sc *sentry.Client) (*Logger, error) {
 	return &Logger{
 		logger:       logger,
 		sentryLogger: sentryLogger,
+		cfg:          &cfg,
 	}, err
 }
 

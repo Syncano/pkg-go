@@ -8,9 +8,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/imdario/mergo"
-
-	"github.com/Syncano/pkg-go/cache"
+	"github.com/Syncano/pkg-go/v2/cache"
 )
 
 // Limiter allows semaphore rate limiting functionality.
@@ -18,19 +16,31 @@ type Limiter struct {
 	mu       sync.Mutex
 	channels *cache.LRUCache // string->channel
 
-	options Options
+	cfg Config
 }
 
 // Options holds settable options for limiter.
-type Options struct {
+type Config struct {
 	Queue int
 	TTL   time.Duration
 }
 
-// DefaultOptions holds default options values for limiter.
-var DefaultOptions = &Options{
+// DefaultConfig holds default options values for limiter.
+var DefaultConfig = Config{
 	Queue: 100,
 	TTL:   10 * time.Minute,
+}
+
+func WithQueue(size int) func(*Config) {
+	return func(config *Config) {
+		config.Queue = size
+	}
+}
+
+func WithTTL(ttl time.Duration) func(*Config) {
+	return func(config *Config) {
+		config.TTL = ttl
+	}
 }
 
 type lockData struct {
@@ -46,18 +56,16 @@ var (
 )
 
 // New initializes new limiter.
-func New(options *Options) *Limiter {
-	if options != nil {
-		mergo.Merge(options, DefaultOptions) // nolint - error not possible
-	} else {
-		options = DefaultOptions
+func New(opts ...func(*Config)) *Limiter {
+	cfg := DefaultConfig
+
+	for _, opt := range opts {
+		opt(&cfg)
 	}
 
-	channels := cache.NewLRUCache(&cache.Options{
-		TTL: options.TTL,
-	}, &cache.LRUOptions{})
+	channels := cache.NewLRUCache(true, cache.WithTTL(cfg.TTL))
 	l := &Limiter{
-		options:  *options,
+		cfg:      cfg,
 		channels: channels,
 	}
 
@@ -101,7 +109,7 @@ func (l *Limiter) Lock(ctx context.Context, key string, limit int) (*LockInfo, e
 
 	defer atomic.AddInt32(&lock.queue, -1)
 
-	if int(atomic.AddInt32(&lock.queue, 1)) > l.options.Queue {
+	if int(atomic.AddInt32(&lock.queue, 1)) > l.cfg.Queue {
 		return nil, ErrMaxQueueSizeReached
 	}
 

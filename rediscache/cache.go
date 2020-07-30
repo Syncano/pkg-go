@@ -6,11 +6,10 @@ import (
 
 	"github.com/go-redis/cache/v7"
 	"github.com/go-redis/redis/v7"
-	"github.com/imdario/mergo"
 	"github.com/vmihailenco/msgpack/v4"
 
-	"github.com/Syncano/pkg-go/database"
-	"github.com/Syncano/pkg-go/util"
+	"github.com/Syncano/pkg-go/v2/database"
+	"github.com/Syncano/pkg-go/v2/util"
 )
 
 const (
@@ -20,29 +19,48 @@ const (
 type Cache struct {
 	codec, codecLocal *cache.Codec
 	db                *database.DB
-	opts              *Options
+	cfg               Config
 }
 
-type Options struct {
+type Config struct {
 	LocalCacheTimeout time.Duration
 	CacheTimeout      time.Duration
 	CacheVersion      int
 	ServiceKey        string
 }
 
-var DefaultOptions = &Options{
+var DefaultConfig = Config{
 	CacheVersion:      1,
 	CacheTimeout:      12 * time.Hour,
 	LocalCacheTimeout: 1 * time.Hour,
 	ServiceKey:        "cache",
 }
 
+func WithTimeout(local, global time.Duration) func(*Config) {
+	return func(config *Config) {
+		config.LocalCacheTimeout = local
+		config.CacheTimeout = global
+	}
+}
+
+func WithVersion(val int) func(*Config) {
+	return func(config *Config) {
+		config.CacheVersion = val
+	}
+}
+
+func WithServiceKey(val string) func(*Config) {
+	return func(config *Config) {
+		config.ServiceKey = val
+	}
+}
+
 // Init sets up a cache.
-func New(r rediser, db *database.DB, opts *Options) *Cache {
-	if opts != nil {
-		mergo.Merge(opts, DefaultOptions) // nolint - error not possible
-	} else {
-		opts = DefaultOptions
+func New(r rediser, db *database.DB, opts ...func(*Config)) *Cache {
+	cfg := DefaultConfig
+
+	for _, opt := range opts {
+		opt(&cfg)
 	}
 
 	codec := &cache.Codec{
@@ -55,13 +73,13 @@ func New(r rediser, db *database.DB, opts *Options) *Cache {
 		Marshal:   msgpack.Marshal,
 		Unmarshal: msgpack.Unmarshal,
 	}
-	codecLocal.UseLocalCache(50000, opts.LocalCacheTimeout)
+	codecLocal.UseLocalCache(50000, cfg.LocalCacheTimeout)
 
 	return &Cache{
 		codec:      codec,
 		codecLocal: codecLocal,
 		db:         db,
-		opts:       opts,
+		cfg:        cfg,
 	}
 }
 
@@ -127,7 +145,7 @@ func (c *Cache) VersionedCache(cacheKey, lookup string, val interface{},
 			return c.codecLocal.Set(&cache.Item{
 				Key:        cacheKey,
 				Object:     item,
-				Expiration: c.opts.LocalCacheTimeout,
+				Expiration: c.cfg.LocalCacheTimeout,
 			})
 		}
 	}
@@ -162,7 +180,7 @@ func (c *Cache) VersionedCache(cacheKey, lookup string, val interface{},
 	c.codecLocal.Set(&cache.Item{ // nolint: errcheck
 		Key:        cacheKey,
 		Object:     item,
-		Expiration: c.opts.LocalCacheTimeout,
+		Expiration: c.cfg.LocalCacheTimeout,
 	})
 
 	return c.codec.Set(&cache.Item{
