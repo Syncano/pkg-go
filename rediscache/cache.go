@@ -17,9 +17,9 @@ const (
 )
 
 type Cache struct {
-	codec, codecLocal *cache.Codec
-	db                *database.DB
-	cfg               Config
+	codec *cache.Codec
+	db    *database.DB
+	cfg   Config
 }
 
 type Config struct {
@@ -69,17 +69,12 @@ func New(r rediser, db *database.DB, opts ...func(*Config)) *Cache {
 		Marshal:   msgpack.Marshal,
 		Unmarshal: msgpack.Unmarshal,
 	}
-	codecLocal := &cache.Codec{
-		Marshal:   msgpack.Marshal,
-		Unmarshal: msgpack.Unmarshal,
-	}
-	codecLocal.UseLocalCache(50000, cfg.LocalCacheTimeout)
+	codec.UseLocalCache(50000, cfg.LocalCacheTimeout)
 
 	return &Cache{
-		codec:      codec,
-		codecLocal: codecLocal,
-		db:         db,
-		cfg:        cfg,
+		codec: codec,
+		db:    db,
+		cfg:   cfg,
 	}
 }
 
@@ -88,19 +83,9 @@ func (c *Cache) Codec() *cache.Codec {
 	return c.codec
 }
 
-// CodecLocal returns cache client that uses local cache as well as remote.
-func (c *Cache) CodecLocal() *cache.Codec {
-	return c.codecLocal
-}
-
 // Stats returns cache statistics.
 func (c *Cache) Stats() *cache.Stats {
-	stats := c.codec.Stats()
-	statsLocal := c.codec.Stats()
-	statsLocal.Hits += stats.Hits
-	statsLocal.Misses += stats.Misses
-
-	return statsLocal
+	return c.codec.Stats()
 }
 
 type cacheItem struct {
@@ -122,17 +107,6 @@ func (c *Cache) VersionedCache(cacheKey, lookup string, val interface{},
 	)
 
 	// Get object and check version. First local and fallback to global cache.
-	if c.codecLocal.Get(cacheKey, item) == nil {
-		version, err = c.codec.Redis.Get(versionKeyFunc()).Result()
-		if err != nil && err != redis.Nil {
-			return err
-		}
-
-		if item.validate(version, validate) {
-			return nil
-		}
-	}
-
 	if c.codec.Get(cacheKey, item) == nil {
 		if version == "" {
 			version, err = c.codec.Redis.Get(versionKeyFunc()).Result()
@@ -142,11 +116,7 @@ func (c *Cache) VersionedCache(cacheKey, lookup string, val interface{},
 		}
 
 		if item.validate(version, validate) {
-			return c.codecLocal.Set(&cache.Item{
-				Key:        cacheKey,
-				Object:     item,
-				Expiration: c.cfg.LocalCacheTimeout,
-			})
+			return nil
 		}
 	}
 
@@ -177,12 +147,6 @@ func (c *Cache) VersionedCache(cacheKey, lookup string, val interface{},
 	item.Version = version
 
 	// Set cache values.
-	c.codecLocal.Set(&cache.Item{ // nolint: errcheck
-		Key:        cacheKey,
-		Object:     item,
-		Expiration: c.cfg.LocalCacheTimeout,
-	})
-
 	return c.codec.Set(&cache.Item{
 		Key:        cacheKey,
 		Object:     item,

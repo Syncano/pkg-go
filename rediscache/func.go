@@ -27,7 +27,15 @@ func (c *Cache) FuncCacheCommitInvalidate(db orm.DB, funcKey, versionKey string)
 	})
 }
 
-func (c *Cache) FuncCache(funcKey, versionKey string, val interface{}, lookup string,
+// FuncCache is a generic cache function that can be used with any value that has a compute function provided.
+//
+//   funcKey - unique function key e.g. `"Trigger.Match"`.
+//   lookup - used as a part of CACHE KEY to separate different funcKeys from each other.
+//   versionKey - used as a part of CACHE KEY and VERSION KEY. This way invalidating version, invalidates cache key as well. E.g. `"i=1;id=1"`.
+//   val - pointer to be populated.
+//   compute - function that computes the value when key is not found in cache.
+//   validate - optional function that validates value from cache.
+func (c *Cache) FuncCache(funcKey, lookup, versionKey string, val interface{},
 	compute func() (interface{}, error), validate func(interface{}) bool) error {
 	funcKey = c.createFuncCacheKey(funcKey, versionKey, lookup)
 
@@ -38,7 +46,8 @@ func (c *Cache) FuncCache(funcKey, versionKey string, val interface{}, lookup st
 		compute, validate, c.cfg.CacheTimeout)
 }
 
-func (c *Cache) SimpleFuncCache(funcKey, versionKey string, val interface{}, lookup string,
+// SimpleFuncCache is a proxy for FuncCache with validate step omitted.
+func (c *Cache) SimpleFuncCache(funcKey, lookup, versionKey string, val interface{},
 	compute func() (interface{}, error)) error {
-	return c.FuncCache(funcKey, versionKey, val, lookup, compute, nil)
+	return c.FuncCache(funcKey, versionKey, lookup, val, compute, nil)
 }
