@@ -1,6 +1,8 @@
 package manager
 
 import (
+	"context"
+
 	"github.com/go-pg/pg/v9/orm"
 
 	"github.com/Syncano/pkg-go/v2/database"
@@ -12,34 +14,50 @@ type LiveManager struct {
 }
 
 // NewLiveManager creates and returns new live manager.
-func NewLiveManager(db *database.DB, c database.DBContext) *LiveManager {
-	return &LiveManager{Manager: NewManager(db, c)}
+func NewLiveManager(c database.DBContext, db *database.DB) *LiveManager {
+	return &LiveManager{Manager: NewManager(c, db)}
 }
 
 // NewLiveTenantManager creates and returns new live tenant manager.
-func NewLiveTenantManager(db *database.DB, c database.DBContext) *LiveManager {
-	return &LiveManager{Manager: NewTenantManager(db, c)}
+func NewLiveTenantManager(c database.DBContext, db *database.DB) *LiveManager {
+	return &LiveManager{Manager: NewTenantManager(c, db)}
 }
 
 // Query returns only alive objects.
 func (m *LiveManager) Query(o interface{}) *orm.Query {
-	return m.DB().ModelContext(m.dbCtx.Request().Context(), o).Where("?TableAlias._is_live IS TRUE")
+	return m.QueryContext(context.Background(), o)
+}
+
+func (m *LiveManager) QueryContext(ctx context.Context, o interface{}) *orm.Query {
+	return m.DB().ModelContext(ctx, o).Where("?TableAlias._is_live IS TRUE")
 }
 
 // All returns all objects, irrelevant if they are alive or not.
 func (m *LiveManager) All(o interface{}) *orm.Query {
-	return m.DB().ModelContext(m.dbCtx.Request().Context(), o)
+	return m.AllContext(context.Background(), o)
+}
+
+func (m *LiveManager) AllContext(ctx context.Context, o interface{}) *orm.Query {
+	return m.DB().ModelContext(ctx, o)
 }
 
 // Dead returns dead objects.
 func (m *LiveManager) Dead(o interface{}) *orm.Query {
-	return m.DB().ModelContext(m.dbCtx.Request().Context(), o).Where("?TableAlias._is_live IS NULL")
+	return m.DeadContext(context.Background(), o)
+}
+
+func (m *LiveManager) DeadContext(ctx context.Context, o interface{}) *orm.Query {
+	return m.DB().ModelContext(ctx, o).Where("?TableAlias._is_live IS NULL")
 }
 
 // Delete is a soft delete for live objects.
 func (m *LiveManager) Delete(model interface{}) error {
+	return m.DeleteContext(context.Background(), model)
+}
+
+func (m *LiveManager) DeleteContext(ctx context.Context, model interface{}) error {
 	db := m.DB()
-	if _, err := db.ModelContext(m.dbCtx.Request().Context(), model).WherePK().Set("_is_live = ?", false).Update(); err != nil {
+	if _, err := db.ModelContext(ctx, model).WherePK().Set("_is_live = ?", false).Update(); err != nil {
 		return err
 	}
 

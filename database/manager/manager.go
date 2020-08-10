@@ -1,6 +1,8 @@
 package manager
 
 import (
+	"context"
+
 	"github.com/go-pg/pg/v9"
 	"github.com/go-pg/pg/v9/orm"
 
@@ -12,27 +14,27 @@ type Manager struct {
 	db    *database.DB
 	dbCtx database.DBContext
 	curDB orm.DB
-	dbGet func(database.DBContext) orm.DB
+	dbGet func() orm.DB
 }
 
 // NewManager creates and returns new manager.
-func NewManager(db *database.DB, c database.DBContext) *Manager {
+func NewManager(c database.DBContext, db *database.DB) *Manager {
 	return &Manager{
 		db:    db,
 		dbCtx: c,
-		dbGet: func(c database.DBContext) orm.DB {
-			return database.GetDB(db, c)
+		dbGet: func() orm.DB {
+			return db.DB()
 		},
 	}
 }
 
 // NewTenantManager creates and returns new tenant manager.
-func NewTenantManager(db *database.DB, c database.DBContext) *Manager {
+func NewTenantManager(c database.DBContext, db *database.DB) *Manager {
 	return &Manager{
 		db:    db,
 		dbCtx: c,
-		dbGet: func(c database.DBContext) orm.DB {
-			return database.GetTenantDB(db, c)
+		dbGet: func() orm.DB {
+			return db.TenantDB(c.Schema())
 		},
 	}
 }
@@ -43,11 +45,7 @@ func (m *Manager) DB() orm.DB {
 		return m.curDB
 	}
 
-	return m.dbGet(m.dbCtx)
-}
-
-func (m *Manager) DBContext() database.DBContext {
-	return m.dbCtx
+	return m.dbGet()
 }
 
 // SetDB sets database.
@@ -57,13 +55,21 @@ func (m *Manager) SetDB(db orm.DB) {
 
 // Query returns all objects.
 func (m *Manager) Query(o interface{}) *orm.Query {
-	return m.DB().ModelContext(m.dbCtx.Request().Context(), o)
+	return m.QueryContext(context.Background(), o)
+}
+
+func (m *Manager) QueryContext(ctx context.Context, o interface{}) *orm.Query {
+	return m.DB().ModelContext(ctx, o)
 }
 
 // Insert creates object.
 func (m *Manager) Insert(model interface{}) error {
+	return m.InsertContext(context.Background(), model)
+}
+
+func (m *Manager) InsertContext(ctx context.Context, model interface{}) error {
 	db := m.DB()
-	if _, err := db.ModelContext(m.dbCtx.Request().Context(), model).Insert(model); err != nil {
+	if _, err := db.ModelContext(ctx, model).Insert(model); err != nil {
 		return err
 	}
 
@@ -72,8 +78,12 @@ func (m *Manager) Insert(model interface{}) error {
 
 // Update updates object.
 func (m *Manager) Update(model interface{}, fields ...string) error {
+	return m.UpdateContext(context.Background(), model, fields...)
+}
+
+func (m *Manager) UpdateContext(ctx context.Context, model interface{}, fields ...string) error {
 	db := m.DB()
-	if _, err := db.ModelContext(m.dbCtx.Request().Context(), model).Column(fields...).WherePK().Update(); err != nil {
+	if _, err := db.ModelContext(ctx, model).Column(fields...).WherePK().Update(); err != nil {
 		return err
 	}
 
@@ -82,8 +92,12 @@ func (m *Manager) Update(model interface{}, fields ...string) error {
 
 // Delete deletes object.
 func (m *Manager) Delete(model interface{}) error {
+	return m.DeleteContext(context.Background(), model)
+}
+
+func (m *Manager) DeleteContext(ctx context.Context, model interface{}) error {
 	db := m.DB()
-	if _, err := db.ModelContext(m.dbCtx.Request().Context(), model).Delete(); err != nil {
+	if _, err := db.ModelContext(ctx, model).Delete(); err != nil {
 		return err
 	}
 
@@ -98,7 +112,7 @@ func (m *Manager) RunInTransaction(fn func(*pg.Tx) error) error {
 	)
 
 	if m.curDB == nil {
-		tx, err = m.dbGet(m.dbCtx).(*pg.DB).Begin()
+		tx, err = m.dbGet().(*pg.DB).Begin()
 		if err != nil {
 			return err
 		}

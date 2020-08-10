@@ -136,16 +136,3 @@ func (d *DB) Shutdown() error {
 
 	return nil
 }
-
-const ContextSchemaKey = "schema"
-
-// GetDB returns base db for context.
-func GetDB(db Databaser, c DBContext) *pg.DB {
-	return db.DB()
-}
-
-// GetTenantDB returns base tenant db for context.
-func GetTenantDB(db Databaser, c DBContext) *pg.DB {
-	schema := c.Get(ContextSchemaKey).(string)
-	return db.TenantDB(schema)
-}
