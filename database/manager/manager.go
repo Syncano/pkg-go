@@ -48,6 +48,10 @@ func (m *Manager) DB() orm.DB {
 	return m.dbGet()
 }
 
+func (m *Manager) DBContext() database.DBContext {
+	return m.dbCtx
+}
+
 // SetDB sets database.
 func (m *Manager) SetDB(db orm.DB) {
 	m.curDB = db
