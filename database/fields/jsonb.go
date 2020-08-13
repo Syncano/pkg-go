@@ -7,54 +7,54 @@ import (
 	"github.com/jackc/pgtype"
 )
 
-type JSON struct {
-	pgtype.JSON
+type JSONB struct {
+	pgtype.JSONB
 	Data interface{}
 }
 
-func NewJSON(val interface{}) JSON {
-	var j pgtype.JSON
+func NewJSONB(val interface{}) JSONB {
+	var j pgtype.JSONB
 
 	err := j.Set(val)
 	if err != nil {
 		panic(err)
 	}
 
-	return JSON{JSON: j}
+	return JSONB{JSONB: j}
 }
 
 // Value implements the database/sql/driver Valuer interface.
-func (j JSON) Value() (driver.Value, error) {
+func (j JSONB) Value() (driver.Value, error) {
 	if j.Data != nil {
 		b, e := json.Marshal(j.Data)
 		return string(b), e
 	}
 
-	return j.JSON.Value()
+	return j.JSONB.Value()
 }
 
-func (j *JSON) Get() interface{} {
+func (j *JSONB) Get() interface{} {
 	if j.Data == nil && !j.IsNull() {
-		j.Data = j.JSON.Get()
+		j.Data = j.JSONB.Get()
 	}
 
 	return j.Data
 }
 
 // Scan implements the database/sql Scanner interface.
-func (j *JSON) Scan(src interface{}) error {
-	err := j.JSON.Scan(src)
+func (j *JSONB) Scan(src interface{}) error {
+	err := j.JSONB.Scan(src)
 	j.Data = nil
 
 	return err
 }
 
 // IsNull returns true if underlying value is null.
-func (j *JSON) IsNull() bool {
-	return j.JSON.Status == pgtype.Null
+func (j *JSONB) IsNull() bool {
+	return j.JSONB.Status == pgtype.Null
 }
 
-func (j *JSON) MarshalJSON() ([]byte, error) {
+func (j *JSONB) MarshalJSON() ([]byte, error) {
 	if j.Data != nil {
 		return json.Marshal(j.Data)
 	}

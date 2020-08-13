@@ -3,7 +3,6 @@ package fields
 import (
 	"database/sql/driver"
 	"fmt"
-	"time"
 
 	"github.com/jackc/pgtype"
 )
@@ -17,12 +16,15 @@ type Time struct {
 	pgtype.Timestamptz
 }
 
-func NewTime(t *time.Time) Time {
-	if t == nil || t.IsZero() {
-		return Time{Timestamptz: pgtype.Timestamptz{Status: pgtype.Null}}
+func NewTime(val interface{}) Time {
+	var t pgtype.Timestamptz
+
+	err := t.Set(val)
+	if err != nil {
+		panic(err)
 	}
 
-	return Time{Timestamptz: pgtype.Timestamptz{Time: t.UTC(), Status: pgtype.Present}}
+	return Time{Timestamptz: t}
 }
 
 // Value is used on value in go-pg, pass it to pointer version.
