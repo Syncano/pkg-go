@@ -30,7 +30,12 @@ func (j JSONB) Value() (driver.Value, error) {
 		return string(b), e
 	}
 
-	return j.JSONB.Value()
+	v, e := j.JSONB.Value()
+	if e != nil {
+		return v, e
+	}
+
+	return string(v.([]byte)), e
 }
 
 func (j *JSONB) Get() interface{} {
