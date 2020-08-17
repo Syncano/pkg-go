@@ -1,6 +1,7 @@
 package rediscache
 
 import (
+	"errors"
 	"reflect"
 	"time"
 
@@ -16,6 +17,10 @@ const (
 	versionGraceDuration = 5 * time.Minute
 )
 
+var (
+	ErrNil = errors.New("compute returned nil object and storeNil is false")
+)
+
 type Cache struct {
 	codec *cache.Codec
 	db    *database.DB
@@ -27,6 +32,7 @@ type Config struct {
 	CacheTimeout      time.Duration
 	CacheVersion      int
 	ServiceKey        string
+	StoreNil          bool
 }
 
 var DefaultConfig = Config{
@@ -34,6 +40,7 @@ var DefaultConfig = Config{
 	CacheTimeout:      12 * time.Hour,
 	LocalCacheTimeout: 1 * time.Hour,
 	ServiceKey:        "cache",
+	StoreNil:          false,
 }
 
 func WithTimeout(local, global time.Duration) func(*Config) {
@@ -52,6 +59,12 @@ func WithVersion(val int) func(*Config) {
 func WithServiceKey(val string) func(*Config) {
 	return func(config *Config) {
 		config.ServiceKey = val
+	}
+}
+
+func WithStoreNil(storeNil bool) func(*Config) {
+	return func(config *Config) {
+		config.StoreNil = storeNil
 	}
 }
 
@@ -124,6 +137,10 @@ func (c *Cache) VersionedCache(cacheKey, lookup string, val interface{},
 	object, err := compute()
 	if err != nil {
 		return err
+	}
+
+	if object == nil && !c.cfg.StoreNil {
+		return ErrNil
 	}
 
 	if version == "" {
