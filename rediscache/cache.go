@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"time"
 
+	"github.com/go-pg/pg/v9/orm"
 	"github.com/go-redis/cache/v7"
 	"github.com/go-redis/redis/v7"
 	"github.com/vmihailenco/msgpack/v4"
@@ -28,6 +29,8 @@ type Cache struct {
 }
 
 type Config struct {
+	ModelPartition    func(db orm.DB, tableName string) string
+	FuncPartition     func(funcKey string) string
 	LocalCacheTimeout time.Duration
 	CacheTimeout      time.Duration
 	CacheVersion      int
@@ -36,6 +39,8 @@ type Config struct {
 }
 
 var DefaultConfig = Config{
+	ModelPartition:    modelPartition,
+	FuncPartition:     funcPartition,
 	CacheVersion:      1,
 	CacheTimeout:      12 * time.Hour,
 	LocalCacheTimeout: 1 * time.Hour,
@@ -43,33 +48,47 @@ var DefaultConfig = Config{
 	StoreNil:          false,
 }
 
-func WithTimeout(local, global time.Duration) func(*Config) {
+type Option func(*Config)
+
+func WithTimeout(local, global time.Duration) Option {
 	return func(config *Config) {
 		config.LocalCacheTimeout = local
 		config.CacheTimeout = global
 	}
 }
 
-func WithVersion(val int) func(*Config) {
+func WithVersion(val int) Option {
 	return func(config *Config) {
 		config.CacheVersion = val
 	}
 }
 
-func WithServiceKey(val string) func(*Config) {
+func WithServiceKey(val string) Option {
 	return func(config *Config) {
 		config.ServiceKey = val
 	}
 }
 
-func WithStoreNil(storeNil bool) func(*Config) {
+func WithStoreNil(storeNil bool) Option {
 	return func(config *Config) {
 		config.StoreNil = storeNil
 	}
 }
 
+func WithModelPartition(f func(db orm.DB, tableName string) string) Option {
+	return func(config *Config) {
+		config.ModelPartition = f
+	}
+}
+
+func WithFuncPartition(f func(funcKey string) string) Option {
+	return func(config *Config) {
+		config.FuncPartition = f
+	}
+}
+
 // Init sets up a cache.
-func New(r rediser, db *database.DB, opts ...func(*Config)) *Cache {
+func New(r rediser, db *database.DB, opts ...Option) *Cache {
 	cfg := DefaultConfig
 
 	for _, opt := range opts {

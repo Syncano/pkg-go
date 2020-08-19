@@ -4,12 +4,12 @@ go 1.14
 
 require (
 	cloud.google.com/go/storage v1.10.0
-	github.com/TheZeroSlave/zapsentry v1.4.1
+	github.com/TheZeroSlave/zapsentry v1.5.0
 	github.com/alexandrevicenzi/unchained v1.3.0
-	github.com/aws/aws-sdk-go v1.33.18
+	github.com/aws/aws-sdk-go v1.34.7
 	github.com/cloudfoundry/gosigar v1.1.0
 	github.com/getsentry/sentry-go v0.7.0
-	github.com/go-pg/pg/v9 v9.1.6
+	github.com/go-pg/pg/v9 v9.1.7
 	github.com/go-redis/cache/v7 v7.0.2
 	github.com/go-redis/redis/v7 v7.4.0
 	github.com/google/uuid v1.1.1 // indirect
@@ -34,7 +34,7 @@ require (
 	go.opencensus.io v0.22.4
 	go.uber.org/zap v1.15.0
 	golang.org/x/crypto v0.0.0-20200728195943-123391ffb6de
-	golang.org/x/tools v0.0.0-20200804011535-6c149bb5ef0d
-	google.golang.org/api v0.29.0
+	golang.org/x/tools v0.0.0-20200819140908-cf83efe03cf8
+	google.golang.org/api v0.30.0
 	google.golang.org/grpc v1.31.0
 )

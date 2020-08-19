@@ -21,20 +21,22 @@ type Config struct {
 	LogLevel string
 }
 
-func WithDebug(debug bool) func(*Config) {
+type Option func(*Config)
+
+func WithDebug(debug bool) Option {
 	return func(config *Config) {
 		config.Debug = debug
 	}
 }
 
-func WithLogLevel(logLevel string) func(*Config) {
+func WithLogLevel(logLevel string) Option {
 	return func(config *Config) {
 		config.LogLevel = logLevel
 	}
 }
 
 // Init sets up a logger.
-func New(sc *sentry.Client, opts ...func(*Config)) (*Logger, error) {
+func New(sc *sentry.Client, opts ...Option) (*Logger, error) {
 	var (
 		config zap.Config
 		cfg    Config

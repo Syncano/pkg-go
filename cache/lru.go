@@ -12,7 +12,7 @@ type LRUCache struct {
 
 // NewLRUCache creates and initializes a new cache object.
 // This one is based on LRU KV with TTL
-func NewLRUCache(autoRefresh bool, opts ...func(*Config)) *LRUCache {
+func NewLRUCache(autoRefresh bool, opts ...Option) *LRUCache {
 	cache := LRUCache{
 		autoRefresh: autoRefresh,
 	}

@@ -59,21 +59,13 @@ func (m *Manager) SetDB(db orm.DB) {
 
 // Query returns all objects.
 func (m *Manager) Query(o interface{}) *orm.Query {
-	return m.QueryContext(context.Background(), o)
-}
-
-func (m *Manager) QueryContext(ctx context.Context, o interface{}) *orm.Query {
-	return m.DB().ModelContext(ctx, o)
+	return m.DB().ModelContext(m.dbCtx.Context(), o)
 }
 
 // Insert creates object.
 func (m *Manager) Insert(model interface{}) error {
-	return m.InsertContext(context.Background(), model)
-}
-
-func (m *Manager) InsertContext(ctx context.Context, model interface{}) error {
 	db := m.DB()
-	if _, err := db.ModelContext(ctx, model).Insert(model); err != nil {
+	if _, err := db.ModelContext(m.dbCtx.Context(), model).Insert(model); err != nil {
 		return err
 	}
 
@@ -82,12 +74,8 @@ func (m *Manager) InsertContext(ctx context.Context, model interface{}) error {
 
 // Update updates object.
 func (m *Manager) Update(model interface{}, fields ...string) error {
-	return m.UpdateContext(context.Background(), model, fields...)
-}
-
-func (m *Manager) UpdateContext(ctx context.Context, model interface{}, fields ...string) error {
 	db := m.DB()
-	if _, err := db.ModelContext(ctx, model).Column(fields...).WherePK().Update(); err != nil {
+	if _, err := db.ModelContext(m.dbCtx.Context(), model).Column(fields...).WherePK().Update(); err != nil {
 		return err
 	}
 

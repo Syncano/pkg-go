@@ -39,19 +39,21 @@ var DefaultConfig = Config{
 	CleanupInterval: 15 * time.Second,
 }
 
-func WithTTL(ttl time.Duration) func(*Config) {
+type Option func(*Config)
+
+func WithTTL(ttl time.Duration) Option {
 	return func(config *Config) {
 		config.TTL = ttl
 	}
 }
 
-func WithCleanupInterval(val time.Duration) func(*Config) {
+func WithCleanupInterval(val time.Duration) Option {
 	return func(config *Config) {
 		config.CleanupInterval = val
 	}
 }
 
-func WithCapacity(c int) func(*Config) {
+func WithCapacity(c int) Option {
 	return func(config *Config) {
 		config.Capacity = c
 	}
@@ -84,7 +86,7 @@ type DeleteHandler func(*valuesItem) *keyValue
 type EvictionHandler func(string, interface{})
 
 // Init initializes cache struct fields and starts janitor process.
-func (c *Cache) Init(deleteHandler DeleteHandler, opts ...func(*Config)) {
+func (c *Cache) Init(deleteHandler DeleteHandler, opts ...Option) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 

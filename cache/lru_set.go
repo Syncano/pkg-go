@@ -11,7 +11,7 @@ type LRUSetCache struct {
 
 // NewLRUSetCache creates and initializes a new cache object.
 // This one is based on LRU K->List with TTL
-func NewLRUSetCache(opts ...func(*Config)) *LRUSetCache {
+func NewLRUSetCache(opts ...Option) *LRUSetCache {
 	cache := LRUSetCache{}
 	cache.Cache.Init(cache.deleteHandler, opts...)
 

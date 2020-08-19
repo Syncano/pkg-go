@@ -8,16 +8,22 @@ import (
 	"github.com/Syncano/pkg-go/v2/util"
 )
 
-func (c *Cache) createFuncCacheKey(funcKey, versionKey, lookup string) string {
-	return fmt.Sprintf("0:%s:f:%d:%s:%s:%x", c.cfg.ServiceKey, c.cfg.CacheVersion, funcKey, versionKey, util.Hash(lookup))
+func (c *Cache) createFuncCacheKey(partition, funcKey, versionKey, lookup string) string {
+	return fmt.Sprintf("%s:%s:f:%d:%s:%s:%x", partition, c.cfg.ServiceKey, c.cfg.CacheVersion, funcKey, versionKey, util.Hash(lookup))
 }
 
-func (c *Cache) createFuncVersionCacheKey(funcKey, versionKey string) string {
-	return fmt.Sprintf("0:%s:f:%d:%s:%s:version", c.cfg.ServiceKey, c.cfg.CacheVersion, funcKey, versionKey)
+func (c *Cache) createFuncVersionCacheKey(partition, funcKey, versionKey string) string {
+	return fmt.Sprintf("%s:%s:f:%d:%s:%s:version", partition, c.cfg.ServiceKey, c.cfg.CacheVersion, funcKey, versionKey)
+}
+
+func funcPartition(funcKey string) string {
+	return "0"
 }
 
 func (c *Cache) FuncCacheInvalidate(funcKey, versionKey string) error {
-	versionKey = c.createFuncVersionCacheKey(funcKey, versionKey)
+	partition := c.cfg.FuncPartition(funcKey)
+	versionKey = c.createFuncVersionCacheKey(partition, funcKey, versionKey)
+
 	return c.InvalidateVersion(versionKey, c.cfg.CacheTimeout)
 }
 
@@ -36,18 +42,19 @@ func (c *Cache) FuncCacheCommitInvalidate(db orm.DB, funcKey, versionKey string)
 //   compute - function that computes the value when key is not found in cache.
 //   validate - optional function that validates value from cache.
 func (c *Cache) FuncCache(funcKey, lookup, versionKey string, val interface{},
-	compute func() (interface{}, error), validate func(interface{}) bool) error {
-	funcKey = c.createFuncCacheKey(funcKey, versionKey, lookup)
+	compute func() (interface{}, error), validate func(interface{}) bool, opts ...Option) error {
+	partition := c.cfg.FuncPartition(funcKey)
+	funcKey = c.createFuncCacheKey(partition, funcKey, versionKey, lookup)
 
 	return c.VersionedCache(funcKey, lookup, val,
 		func() string {
-			return c.createFuncVersionCacheKey(funcKey, versionKey)
+			return c.createFuncVersionCacheKey(partition, funcKey, versionKey)
 		},
 		compute, validate, c.cfg.CacheTimeout)
 }
 
 // SimpleFuncCache is a proxy for FuncCache with validate step omitted.
 func (c *Cache) SimpleFuncCache(funcKey, lookup, versionKey string, val interface{},
-	compute func() (interface{}, error)) error {
+	compute func() (interface{}, error), opts ...Option) error {
 	return c.FuncCache(funcKey, versionKey, lookup, val, compute, nil)
 }

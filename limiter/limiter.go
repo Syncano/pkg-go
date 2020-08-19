@@ -25,19 +25,21 @@ type Config struct {
 	TTL   time.Duration
 }
 
+type Option func(*Config)
+
 // DefaultConfig holds default options values for limiter.
 var DefaultConfig = Config{
 	Queue: 100,
 	TTL:   10 * time.Minute,
 }
 
-func WithQueue(size int) func(*Config) {
+func WithQueue(size int) Option {
 	return func(config *Config) {
 		config.Queue = size
 	}
 }
 
-func WithTTL(ttl time.Duration) func(*Config) {
+func WithTTL(ttl time.Duration) Option {
 	return func(config *Config) {
 		config.TTL = ttl
 	}
@@ -56,7 +58,7 @@ var (
 )
 
 // New initializes new limiter.
-func New(opts ...func(*Config)) *Limiter {
+func New(opts ...Option) *Limiter {
 	cfg := DefaultConfig
 
 	for _, opt := range opts {
