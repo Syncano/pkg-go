@@ -170,14 +170,18 @@ func (c *Cache) VersionedCache(cacheKey, lookup string, val interface{},
 	}
 
 	// Set object through reflect.
-	vref := reflect.ValueOf(val)
 	oref := reflect.ValueOf(object)
+	vref := reflect.ValueOf(val)
 
-	if oref.Kind() == reflect.Ptr {
+	if oref.IsValid() && oref.Kind() == reflect.Ptr && !oref.IsNil() {
 		oref = oref.Elem()
 	}
 
-	vref.Elem().Set(oref)
+	if !oref.IsValid() || (oref.Kind() == reflect.Ptr && oref.IsNil()) {
+		vref.Elem().Set(reflect.Zero(vref.Elem().Type()))
+	} else {
+		vref.Elem().Set(oref)
+	}
 
 	item.Object = val
 	item.Version = version
