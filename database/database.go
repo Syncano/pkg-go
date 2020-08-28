@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"fmt"
 	"net"
 	"sync"
 	"time"
@@ -42,6 +43,8 @@ type Options struct {
 	pg.Options
 
 	StatementTimeout int
+	Host             string
+	Port             string
 }
 
 // DefaultDBOptions returns
@@ -59,6 +62,17 @@ func DefaultDBOptions() *Options {
 
 func (o *Options) PGOptions() *pg.Options {
 	opts := o.Options
+
+	if o.Host != "" {
+		port := o.Port
+
+		if port == "" {
+			port = "5432"
+		}
+
+		opts.Addr = fmt.Sprintf("%s:%s", o.Host, port)
+	}
+
 	if opts.Dialer == nil {
 		opts.Dialer = func(ctx context.Context, network, addr string) (net.Conn, error) {
 			var conn net.Conn
