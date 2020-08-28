@@ -48,17 +48,14 @@ type Options struct {
 	Port             string
 }
 
-// DefaultDBOptions returns
-func DefaultDBOptions() *Options {
-	return &Options{
-		Options: pg.Options{
-			PoolSize:    10,
-			IdleTimeout: 5 * time.Minute,
-			PoolTimeout: 30 * time.Second,
-			MaxConnAge:  15 * time.Minute,
-			MaxRetries:  1,
-		},
-	}
+var DefaultOptions = Options{
+	Options: pg.Options{
+		PoolSize:    10,
+		IdleTimeout: 5 * time.Minute,
+		PoolTimeout: 30 * time.Second,
+		MaxConnAge:  15 * time.Minute,
+		MaxRetries:  1,
+	},
 }
 
 func (o *Options) PGOptions() *pg.Options {
@@ -91,7 +88,7 @@ func (o *Options) PGOptions() *pg.Options {
 
 	if opts.OnConnect == nil && o.StatementTimeout != 0 {
 		opts.OnConnect = func(conn *pg.Conn) error {
-			_, err := conn.Exec("SET statement_timeout = {}", o.StatementTimeout/time.Microsecond)
+			_, err := conn.Exec("SET statement_timeout = ?", o.StatementTimeout/time.Microsecond)
 			return err
 		}
 	}

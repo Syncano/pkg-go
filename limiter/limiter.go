@@ -19,7 +19,7 @@ type Limiter struct {
 	cfg Config
 }
 
-// Options holds settable options for limiter.
+// Config holds settable config for limiter.
 type Config struct {
 	Queue int
 	TTL   time.Duration

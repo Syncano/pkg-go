@@ -37,7 +37,7 @@ func (res *DownloadResult) String() string {
 	return fmt.Sprintf("{URL:%s, Error:%s}", res.URL, res.Error)
 }
 
-// DownloaderOptions holds information about downloader settable options.
+// DownloaderConfig holds information about downloader settable options.
 type DownloaderConfig struct {
 	Concurrency uint
 	Timeout     time.Duration
@@ -91,7 +91,7 @@ func NewDownloader(opts ...func(*DownloaderConfig)) *HTTPDownloader {
 	}
 }
 
-// Options returns a copy of downloader options struct.
+// Config returns a copy of downloader config struct.
 func (d *HTTPDownloader) Config() DownloaderConfig {
 	return d.cfg
 }

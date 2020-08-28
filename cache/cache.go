@@ -117,7 +117,7 @@ func (c *Cache) Init(deleteHandler DeleteHandler, opts ...Option) {
 	go c.janitor.Run(c)
 }
 
-// Options returns a copy of options struct.
+// Config returns a copy of config struct.
 func (c *Cache) Config() Config {
 	return c.cfg
 }
