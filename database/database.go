@@ -88,7 +88,7 @@ func (o *Options) PGOptions() *pg.Options {
 
 	if opts.OnConnect == nil && o.StatementTimeout != 0 {
 		opts.OnConnect = func(conn *pg.Conn) error {
-			_, err := conn.Exec("SET statement_timeout = ?", o.StatementTimeout/time.Microsecond)
+			_, err := conn.Exec("SET statement_timeout = ?", o.StatementTimeout/time.Millisecond)
 			return err
 		}
 	}
