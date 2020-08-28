@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/go-pg/pg/v9"
+	"github.com/google/go-cmp/cmp"
 	"go.uber.org/zap"
 
 	"github.com/Syncano/pkg-go/v2/log"
@@ -42,7 +43,7 @@ type DB struct {
 type Options struct {
 	pg.Options
 
-	StatementTimeout int
+	StatementTimeout time.Duration
 	Host             string
 	Port             string
 }
@@ -90,7 +91,7 @@ func (o *Options) PGOptions() *pg.Options {
 
 	if opts.OnConnect == nil && o.StatementTimeout != 0 {
 		opts.OnConnect = func(conn *pg.Conn) error {
-			_, err := conn.Exec("SET statement_timeout = {}", 3*time.Second/time.Microsecond)
+			_, err := conn.Exec("SET statement_timeout = {}", o.StatementTimeout/time.Microsecond)
 			return err
 		}
 	}
@@ -99,12 +100,12 @@ func (o *Options) PGOptions() *pg.Options {
 }
 
 // NewDB creates a database.
-func NewDB(opts, instancesOpts *pg.Options, logger *log.Logger, debug bool) *DB {
-	commonDB := initDB(opts, logger, debug)
+func NewDB(opts, instancesOpts *Options, logger *log.Logger, debug bool) *DB {
+	commonDB := initDB(opts.PGOptions(), logger, debug)
 	tenantDB := commonDB
 
-	if instancesOpts != nil && (instancesOpts.Addr != opts.Addr || instancesOpts.Database != opts.Database) {
-		tenantDB = initDB(instancesOpts, logger, debug)
+	if instancesOpts != nil && !cmp.Equal(instancesOpts, opts) {
+		tenantDB = initDB(instancesOpts.PGOptions(), logger, debug)
 	}
 
 	return &DB{

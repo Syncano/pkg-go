@@ -12,6 +12,7 @@ require (
 	github.com/go-pg/pg/v9 v9.1.7
 	github.com/go-redis/cache/v7 v7.0.2
 	github.com/go-redis/redis/v7 v7.4.0
+	github.com/google/go-cmp v0.5.1
 	github.com/google/uuid v1.1.1 // indirect
 	github.com/gopherjs/gopherjs v0.0.0-20200217142428-fce0ec30dd00 // indirect
 	github.com/hashicorp/yamux v0.0.0-20200609203250-aecfd211c9ce
