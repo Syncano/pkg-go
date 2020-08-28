@@ -38,27 +38,50 @@ type DB struct {
 	softDeleteHooks map[string][]SoftDeleteModelHookFunc
 }
 
+type Options struct {
+	pg.Options
+
+	StatementTimeout int
+}
+
 // DefaultDBOptions returns
-func DefaultDBOptions() *pg.Options {
-	return &pg.Options{
-		Dialer: func(ctx context.Context, network, addr string) (net.Conn, error) {
+func DefaultDBOptions() *Options {
+	return &Options{
+		Options: pg.Options{
+			PoolSize:    10,
+			IdleTimeout: 5 * time.Minute,
+			PoolTimeout: 30 * time.Second,
+			MaxConnAge:  15 * time.Minute,
+			MaxRetries:  1,
+		},
+	}
+}
+
+func (o *Options) PGOptions() *pg.Options {
+	opts := o.Options
+	if opts.Dialer == nil {
+		opts.Dialer = func(ctx context.Context, network, addr string) (net.Conn, error) {
 			var conn net.Conn
 
 			return conn, util.Retry(dbConnRetries, dbConnRetrySleep, func() error {
 				var (
 					err error
 				)
-				d := net.Dialer{Timeout: 3 * time.Second}
+				d := net.Dialer{Timeout: o.DialTimeout, KeepAlive: 5 * time.Minute}
 				conn, err = d.DialContext(ctx, network, addr)
 				return err
 			})
-		},
-		PoolSize:    10,
-		IdleTimeout: 5 * time.Minute,
-		PoolTimeout: 30 * time.Second,
-		MaxConnAge:  15 * time.Minute,
-		MaxRetries:  1,
+		}
 	}
+
+	if opts.OnConnect == nil && o.StatementTimeout != 0 {
+		opts.OnConnect = func(conn *pg.Conn) error {
+			_, err := conn.Exec("SET statement_timeout = {}", 3*time.Second/time.Microsecond)
+			return err
+		}
+	}
+
+	return &opts
 }
 
 // NewDB creates a database.
